@@ -4,19 +4,24 @@ defmodule AuroraWeb.DashboardLive.Index do
   alias Aurora.Boards
   alias Aurora.Habits
   alias Aurora.Goals
+  alias Aurora.Journal
 
   @impl true
   def mount(_params, _session, socket) do
     boards = Boards.list_boards()
     habits_with_status = Habits.list_habits_with_today_status()
     goals = Goals.list_goals()
+    today_entry = Journal.get_entry_for_date(Date.utc_today())
+    recent_entries = Journal.recent_entries(7)
 
     {:ok,
      socket
      |> assign(:page_title, "Dashboard")
      |> assign(:boards, boards)
      |> assign(:habits, habits_with_status)
-     |> assign(:goals, goals)}
+     |> assign(:goals, goals)
+     |> assign(:today_entry, today_entry)
+     |> assign(:recent_entries, recent_entries)}
   end
 
   @impl true
@@ -127,6 +132,39 @@ defmodule AuroraWeb.DashboardLive.Index do
           </div>
         </div>
 
+        <!-- Journal Widget -->
+        <div class="card bg-base-100 shadow-xl">
+          <div class="card-body">
+            <h2 class="card-title">
+              <.icon name="hero-book-open" class="w-5 h-5" />
+              Journal
+            </h2>
+            <%= if @today_entry do %>
+              <div class="space-y-2">
+                <div class="flex items-center gap-2">
+                  <%= if @today_entry.mood do %>
+                    <span title={Journal.mood_label(@today_entry.mood)}><%= Journal.mood_emoji(@today_entry.mood) %></span>
+                  <% end %>
+                  <%= if @today_entry.energy do %>
+                    <span title={Journal.energy_label(@today_entry.energy)}><%= Journal.energy_emoji(@today_entry.energy) %></span>
+                  <% end %>
+                  <span class="text-sm text-base-content/60">Today</span>
+                </div>
+                <%= if @today_entry.content do %>
+                  <p class="text-sm line-clamp-3"><%= String.slice(@today_entry.content, 0, 150) %><%= if String.length(@today_entry.content || "") > 150, do: "..." %></p>
+                <% end %>
+              </div>
+            <% else %>
+              <p class="text-base-content/60">No entry for today yet</p>
+            <% end %>
+            <div class="card-actions justify-end mt-4">
+              <.link navigate={~p"/journal"} class="btn btn-primary btn-sm">
+                <%= if @today_entry, do: "View Journal", else: "Write Today" %>
+              </.link>
+            </div>
+          </div>
+        </div>
+
         <!-- Quick Stats Widget -->
         <div class="card bg-base-100 shadow-xl">
           <div class="card-body">
@@ -148,6 +186,10 @@ defmodule AuroraWeb.DashboardLive.Index do
               <div class="stat">
                 <div class="stat-title">Active Goals</div>
                 <div class="stat-value text-info"><%= length(@goals) %></div>
+              </div>
+              <div class="stat">
+                <div class="stat-title">Journal Entries (7 days)</div>
+                <div class="stat-value text-secondary"><%= length(@recent_entries) %></div>
               </div>
             </div>
           </div>
