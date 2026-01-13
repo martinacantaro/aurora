@@ -1,0 +1,32 @@
+<div class="min-h-screen flex items-center justify-center bg-base-200">
+  <div class="card w-96 bg-base-100 shadow-xl">
+    <div class="card-body">
+      <h2 class="card-title justify-center text-2xl mb-4">Aurora</h2>
+      <p class="text-center text-base-content/70 mb-6">Enter your password to continue</p>
+
+      <%= if @error do %>
+        <div class="alert alert-error mb-4">
+          <span><%= @error %></span>
+        </div>
+      <% end %>
+
+      <form action="/login" method="post">
+        <input type="hidden" name="_csrf_token" value={get_csrf_token()} />
+        <div class="form-control w-full">
+          <input
+            type="password"
+            name="password"
+            placeholder="Password"
+            class="input input-bordered w-full"
+            autofocus
+          />
+        </div>
+        <div class="form-control mt-6">
+          <button type="submit" class="btn btn-primary w-full">
+            Sign In
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
