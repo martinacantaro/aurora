@@ -6,11 +6,14 @@ defmodule AuroraWeb.BoardLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
+    boards = Boards.list_boards()
+
     {:ok,
      socket
      |> assign(:page_title, "Operations Command")
      |> assign(:show_new_form, false)
-     |> stream(:boards, Boards.list_boards())}
+     |> assign(:boards_count, length(boards))
+     |> stream(:boards, boards)}
   end
 
   @impl true
@@ -34,7 +37,11 @@ defmodule AuroraWeb.BoardLive.Index do
   def handle_event("delete", %{"id" => id}, socket) do
     board = Boards.get_board!(id)
     {:ok, _} = Boards.delete_board(board)
-    {:noreply, stream_delete(socket, :boards, board)}
+
+    {:noreply,
+     socket
+     |> update(:boards_count, &(&1 - 1))
+     |> stream_delete(:boards, board)}
   end
 
   def handle_event("show_new", _params, socket) do
@@ -51,6 +58,7 @@ defmodule AuroraWeb.BoardLive.Index do
       {:ok, board} ->
         {:noreply,
          socket
+         |> update(:boards_count, &(&1 + 1))
          |> stream_insert(:boards, board)
          |> assign(:show_new_form, false)
          |> put_flash(:info, "War room established!")}
@@ -104,7 +112,7 @@ defmodule AuroraWeb.BoardLive.Index do
         <% end %>
 
         <!-- Boards Grid -->
-        <%= if Enum.empty?(@streams.boards |> Enum.to_list()) do %>
+        <%= if @boards_count == 0 do %>
           <div class="card card-ornate corner-tl corner-tr corner-bl corner-br p-8 text-center">
             <p class="text-base-content/50 italic">No operations established. Create a war room to coordinate your campaigns.</p>
           </div>
