@@ -433,105 +433,110 @@ defmodule AuroraWeb.BoardLive.Show do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="h-screen flex flex-col">
+    <div class="h-screen flex flex-col bg-base-300">
       <!-- Header -->
-      <div class="navbar bg-base-100 shadow-sm px-4">
-        <div class="flex-1 gap-4">
-          <.link navigate={~p"/boards"} class="btn btn-ghost btn-sm">
-            <.icon name="hero-arrow-left" class="w-4 h-4" />
-          </.link>
-          <h1 class="text-xl font-bold"><%= @board.name %></h1>
-        </div>
-        <div class="flex-none gap-2">
-          <!-- Labels Management -->
-          <div class="dropdown dropdown-end">
-            <label tabindex="0" phx-click="toggle_labels_menu" class="btn btn-ghost btn-sm">
-              <.icon name="hero-tag" class="w-4 h-4" />
-              Labels
-            </label>
-            <%= if @show_labels_menu do %>
-              <div tabindex="0" class="dropdown-content z-50 p-4 shadow bg-base-100 rounded-box w-72">
-                <h3 class="font-semibold mb-3">Manage Labels</h3>
-
-                <!-- Existing Labels -->
-                <div class="space-y-2 mb-4">
-                  <%= for label <- @labels do %>
-                    <div class="flex items-center justify-between gap-2">
-                      <div class="flex items-center gap-2">
-                        <span class="w-4 h-4 rounded" style={"background-color: #{label.color}"}></span>
-                        <span class="text-sm"><%= label.name %></span>
-                      </div>
-                      <button phx-click="delete_label" phx-value-id={label.id} class="btn btn-ghost btn-xs text-error">
-                        <.icon name="hero-x-mark" class="w-3 h-3" />
-                      </button>
-                    </div>
-                  <% end %>
-                  <%= if Enum.empty?(@labels) do %>
-                    <p class="text-sm text-base-content/60">No labels yet</p>
-                  <% end %>
-                </div>
-
-                <!-- New Label Form -->
-                <form phx-submit="create_label" class="space-y-2">
-                  <div class="flex gap-2">
-                    <input type="text" name="name" placeholder="Label name" class="input input-sm input-bordered flex-1" required />
-                    <input type="color" name="color" value="#3b82f6" class="w-10 h-8 rounded cursor-pointer" />
-                  </div>
-                  <button type="submit" class="btn btn-primary btn-sm w-full">Add Label</button>
-                </form>
-              </div>
-            <% end %>
+      <div class="border-b border-primary/30 bg-base-200 px-4 py-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-4">
+            <.link navigate={~p"/boards"} class="btn btn-ghost btn-sm text-primary">
+              <.icon name="hero-arrow-left" class="w-4 h-4" />
+            </.link>
+            <div class="flex items-center gap-3">
+              <.icon name="hero-map" class="w-5 h-5 text-primary" />
+              <h1 class="text-xl font-semibold text-primary tracking-wide"><%= @board.name %></h1>
+            </div>
           </div>
-          <.link navigate={~p"/"} class="btn btn-ghost btn-sm">Dashboard</.link>
+          <div class="flex items-center gap-2">
+            <!-- Labels Management -->
+            <div class="dropdown dropdown-end">
+              <label tabindex="0" phx-click="toggle_labels_menu" class="btn btn-imperial btn-sm">
+                <.icon name="hero-tag" class="w-4 h-4" />
+                Insignias
+              </label>
+              <%= if @show_labels_menu do %>
+                <div tabindex="0" class="dropdown-content z-50 p-4 shadow-lg bg-base-200 border border-primary/30 rounded w-72">
+                  <h3 class="stat-block-label mb-3">Manage Insignias</h3>
+
+                  <!-- Existing Labels -->
+                  <div class="space-y-2 mb-4">
+                    <%= for label <- @labels do %>
+                      <div class="flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-2">
+                          <span class="w-4 h-4 rounded" style={"background-color: #{label.color}"}></span>
+                          <span class="text-sm"><%= label.name %></span>
+                        </div>
+                        <button phx-click="delete_label" phx-value-id={label.id} class="btn btn-ghost btn-xs text-error">
+                          <.icon name="hero-x-mark" class="w-3 h-3" />
+                        </button>
+                      </div>
+                    <% end %>
+                    <%= if Enum.empty?(@labels) do %>
+                      <p class="text-sm text-base-content/60 italic">No insignias established</p>
+                    <% end %>
+                  </div>
+
+                  <!-- New Label Form -->
+                  <form phx-submit="create_label" class="space-y-2">
+                    <div class="flex gap-2">
+                      <input type="text" name="name" placeholder="Insignia name" class="input input-imperial input-sm flex-1" required />
+                      <input type="color" name="color" value="#c9a227" class="w-10 h-8 rounded cursor-pointer border border-primary/30" />
+                    </div>
+                    <button type="submit" class="btn btn-imperial-primary btn-sm w-full">Add Insignia</button>
+                  </form>
+                </div>
+              <% end %>
+            </div>
+            <.link navigate={~p"/"} class="btn btn-imperial btn-sm">Bridge</.link>
+          </div>
         </div>
       </div>
 
       <!-- Filter Bar -->
-      <div class="bg-base-100 px-4 py-2 flex items-center gap-2 border-b border-base-200">
+      <div class="bg-base-200 px-4 py-2 flex items-center gap-2 border-b border-primary/20">
         <!-- Search -->
         <div class="form-control">
-          <div class="input-group input-group-sm">
-            <span class="bg-base-200"><.icon name="hero-magnifying-glass" class="w-4 h-4" /></span>
+          <div class="flex items-center gap-2">
+            <span class="text-primary"><.icon name="hero-magnifying-glass" class="w-4 h-4" /></span>
             <input
               type="text"
-              placeholder="Search tasks..."
+              placeholder="Search directives..."
               value={@search_query}
               phx-keyup="search"
               phx-value-query={@search_query}
               phx-debounce="300"
               name="query"
-              class="input input-sm input-bordered w-48"
+              class="input input-imperial input-sm w-48"
             />
           </div>
         </div>
 
         <!-- Label Filter -->
         <div class="dropdown">
-          <label tabindex="0" phx-click="toggle_filter_labels" class={"btn btn-sm #{if @filter_labels != [], do: "btn-primary", else: "btn-ghost"}"}>
+          <label tabindex="0" phx-click="toggle_filter_labels" class={"btn btn-sm #{if @filter_labels != [], do: "btn-imperial-primary", else: "btn-imperial"}"}>
             <.icon name="hero-tag" class="w-4 h-4" />
-            Labels
+            Insignias
             <%= if @filter_labels != [] do %>
-              <span class="badge badge-sm"><%= length(@filter_labels) %></span>
+              <span class="badge-imperial text-xs"><%= length(@filter_labels) %></span>
             <% end %>
           </label>
           <%= if @show_filter_labels do %>
-            <div tabindex="0" class="dropdown-content z-50 p-3 shadow bg-base-100 rounded-box w-56">
+            <div tabindex="0" class="dropdown-content z-50 p-3 shadow-lg bg-base-200 border border-primary/30 rounded w-56">
               <div class="space-y-2">
                 <%= for label <- @labels do %>
-                  <label class="flex items-center gap-2 cursor-pointer hover:bg-base-200 p-1 rounded">
+                  <label class="flex items-center gap-2 cursor-pointer hover:bg-base-100 p-1 rounded">
                     <input
                       type="checkbox"
                       checked={label.id in @filter_labels}
                       phx-click="toggle_label_filter"
                       phx-value-id={label.id}
-                      class="checkbox checkbox-sm"
+                      class="checkbox checkbox-sm checkbox-primary"
                     />
                     <span class="w-3 h-3 rounded" style={"background-color: #{label.color}"}></span>
                     <span class="text-sm"><%= label.name %></span>
                   </label>
                 <% end %>
                 <%= if Enum.empty?(@labels) do %>
-                  <p class="text-sm text-base-content/60">No labels</p>
+                  <p class="text-sm text-base-content/60 italic">No insignias</p>
                 <% end %>
               </div>
             </div>
@@ -540,47 +545,47 @@ defmodule AuroraWeb.BoardLive.Show do
 
         <!-- Priority Filter -->
         <div class="dropdown">
-          <label tabindex="0" phx-click="toggle_filter_priority" class={"btn btn-sm #{if @filter_priority, do: "btn-primary", else: "btn-ghost"}"}>
+          <label tabindex="0" phx-click="toggle_filter_priority" class={"btn btn-sm #{if @filter_priority, do: "btn-imperial-primary", else: "btn-imperial"}"}>
             <.icon name="hero-flag" class="w-4 h-4" />
             Priority
             <%= if @filter_priority do %>
-              <span class="badge badge-sm"><%= priority_label(@filter_priority) %></span>
+              <span class="badge-imperial text-xs"><%= priority_label(@filter_priority) %></span>
             <% end %>
           </label>
           <%= if @show_filter_priority do %>
-            <ul tabindex="0" class="dropdown-content z-50 menu p-2 shadow bg-base-100 rounded-box w-40">
-              <li><a phx-click="set_priority_filter" phx-value-priority="" class={if @filter_priority == nil, do: "active"}>All</a></li>
-              <li><a phx-click="set_priority_filter" phx-value-priority="1" class={"text-error #{if @filter_priority == 1, do: "active"}"}>P1 - Critical</a></li>
-              <li><a phx-click="set_priority_filter" phx-value-priority="2" class={"text-warning #{if @filter_priority == 2, do: "active"}"}>P2 - High</a></li>
-              <li><a phx-click="set_priority_filter" phx-value-priority="3" class={"text-info #{if @filter_priority == 3, do: "active"}"}>P3 - Medium</a></li>
-              <li><a phx-click="set_priority_filter" phx-value-priority="4" class={if @filter_priority == 4, do: "active"}>P4 - Low</a></li>
+            <ul tabindex="0" class="dropdown-content z-50 menu p-2 shadow-lg bg-base-200 border border-primary/30 rounded w-40">
+              <li><a phx-click="set_priority_filter" phx-value-priority="" class={if @filter_priority == nil, do: "text-primary"}>All</a></li>
+              <li><a phx-click="set_priority_filter" phx-value-priority="1" class={"text-error #{if @filter_priority == 1, do: "font-bold"}"}>P1 - Critical</a></li>
+              <li><a phx-click="set_priority_filter" phx-value-priority="2" class={"text-warning #{if @filter_priority == 2, do: "font-bold"}"}>P2 - High</a></li>
+              <li><a phx-click="set_priority_filter" phx-value-priority="3" class={"text-info #{if @filter_priority == 3, do: "font-bold"}"}>P3 - Medium</a></li>
+              <li><a phx-click="set_priority_filter" phx-value-priority="4" class={if @filter_priority == 4, do: "font-bold"}>P4 - Low</a></li>
             </ul>
           <% end %>
         </div>
 
         <!-- Due Date Filter -->
         <div class="dropdown">
-          <label tabindex="0" phx-click="toggle_filter_due" class={"btn btn-sm #{if @filter_due_date, do: "btn-primary", else: "btn-ghost"}"}>
+          <label tabindex="0" phx-click="toggle_filter_due" class={"btn btn-sm #{if @filter_due_date, do: "btn-imperial-primary", else: "btn-imperial"}"}>
             <.icon name="hero-calendar" class="w-4 h-4" />
-            Due
+            Deadline
             <%= if @filter_due_date do %>
-              <span class="badge badge-sm"><%= @filter_due_date %></span>
+              <span class="badge-imperial text-xs"><%= @filter_due_date %></span>
             <% end %>
           </label>
           <%= if @show_filter_due do %>
-            <ul tabindex="0" class="dropdown-content z-50 menu p-2 shadow bg-base-100 rounded-box w-40">
-              <li><a phx-click="set_due_date_filter" phx-value-due="" class={if @filter_due_date == nil, do: "active"}>All</a></li>
-              <li><a phx-click="set_due_date_filter" phx-value-due="overdue" class={"text-error #{if @filter_due_date == "overdue", do: "active"}"}>Overdue</a></li>
-              <li><a phx-click="set_due_date_filter" phx-value-due="today" class={"text-warning #{if @filter_due_date == "today", do: "active"}"}>Today</a></li>
-              <li><a phx-click="set_due_date_filter" phx-value-due="week" class={if @filter_due_date == "week", do: "active"}>This Week</a></li>
-              <li><a phx-click="set_due_date_filter" phx-value-due="none" class={if @filter_due_date == "none", do: "active"}>No Date</a></li>
+            <ul tabindex="0" class="dropdown-content z-50 menu p-2 shadow-lg bg-base-200 border border-primary/30 rounded w-40">
+              <li><a phx-click="set_due_date_filter" phx-value-due="" class={if @filter_due_date == nil, do: "text-primary"}>All</a></li>
+              <li><a phx-click="set_due_date_filter" phx-value-due="overdue" class={"text-error #{if @filter_due_date == "overdue", do: "font-bold"}"}>Overdue</a></li>
+              <li><a phx-click="set_due_date_filter" phx-value-due="today" class={"text-warning #{if @filter_due_date == "today", do: "font-bold"}"}>Today</a></li>
+              <li><a phx-click="set_due_date_filter" phx-value-due="week" class={if @filter_due_date == "week", do: "font-bold"}>This Week</a></li>
+              <li><a phx-click="set_due_date_filter" phx-value-due="none" class={if @filter_due_date == "none", do: "font-bold"}>No Deadline</a></li>
             </ul>
           <% end %>
         </div>
 
         <!-- Clear Filters -->
         <%= if has_active_filters?(assigns) do %>
-          <button phx-click="clear_filters" class="btn btn-ghost btn-sm text-error">
+          <button phx-click="clear_filters" class="btn btn-imperial-danger btn-sm">
             <.icon name="hero-x-mark" class="w-4 h-4" />
             Clear
           </button>
@@ -588,7 +593,7 @@ defmodule AuroraWeb.BoardLive.Show do
       </div>
 
       <!-- Kanban Board -->
-      <div class="flex-1 overflow-x-auto p-4 bg-base-200">
+      <div class="flex-1 overflow-x-auto p-4 bg-base-300">
         <div
           class="flex gap-4 h-full"
           id="columns-container"
@@ -598,34 +603,34 @@ defmodule AuroraWeb.BoardLive.Show do
           <!-- Columns -->
           <%= for column <- @columns do %>
             <div
-              class="flex-shrink-0 w-80 bg-base-100 rounded-lg shadow-md flex flex-col max-h-full"
+              class="flex-shrink-0 w-80 bg-base-200 border border-primary/20 rounded flex flex-col max-h-full"
               id={"column-#{column.id}"}
               data-id={column.id}
             >
               <!-- Column Header -->
-              <div class="p-3 border-b border-base-200 flex items-center justify-between">
+              <div class="p-3 border-b border-primary/20 flex items-center justify-between bg-base-100">
                 <%= if @editing_column == column.id do %>
                   <form phx-submit="update_column" phx-value-id={column.id} class="flex-1 flex gap-2">
                     <input
                       type="text"
                       name="name"
                       value={column.name}
-                      class="input input-sm input-bordered flex-1"
+                      class="input input-imperial input-sm flex-1"
                       autofocus
                     />
-                    <button type="submit" class="btn btn-ghost btn-sm btn-square">
+                    <button type="submit" class="btn btn-ghost btn-sm btn-square text-success">
                       <.icon name="hero-check" class="w-4 h-4" />
                     </button>
-                    <button type="button" phx-click="cancel_edit_column" class="btn btn-ghost btn-sm btn-square">
+                    <button type="button" phx-click="cancel_edit_column" class="btn btn-ghost btn-sm btn-square text-error">
                       <.icon name="hero-x-mark" class="w-4 h-4" />
                     </button>
                   </form>
                 <% else %>
                   <% filtered_count = length(filter_tasks(column.tasks, assigns)) %>
                   <% total_count = length(column.tasks) %>
-                  <h3 class="font-semibold flex-1">
+                  <h3 class="font-semibold text-primary flex-1 tracking-wide">
                     <%= column.name %>
-                    <span class="badge badge-sm ml-2">
+                    <span class="badge-imperial text-xs ml-2">
                       <%= if filtered_count != total_count do %>
                         <%= filtered_count %>/<%= total_count %>
                       <% else %>
@@ -634,14 +639,14 @@ defmodule AuroraWeb.BoardLive.Show do
                     </span>
                   </h3>
                   <div class="dropdown dropdown-end">
-                    <label tabindex="0" class="btn btn-ghost btn-sm btn-square">
+                    <label tabindex="0" class="btn btn-ghost btn-sm btn-square text-primary">
                       <.icon name="hero-ellipsis-vertical" class="w-4 h-4" />
                     </label>
-                    <ul tabindex="0" class="dropdown-content z-50 menu p-2 shadow bg-base-100 rounded-box w-40">
-                      <li><a phx-click="edit_column" phx-value-id={column.id}>Rename</a></li>
+                    <ul tabindex="0" class="dropdown-content z-50 menu p-2 shadow-lg bg-base-200 border border-primary/30 rounded w-40">
+                      <li><a phx-click="edit_column" phx-value-id={column.id} class="text-base-content hover:text-primary">Rename</a></li>
                       <li>
-                        <a phx-click="delete_column" phx-value-id={column.id} data-confirm="Delete this column and all its tasks?">
-                          Delete
+                        <a phx-click="delete_column" phx-value-id={column.id} data-confirm="Disband this division and all directives?" class="text-error hover:bg-error/20">
+                          Disband
                         </a>
                       </li>
                     </ul>
@@ -660,83 +665,81 @@ defmodule AuroraWeb.BoardLive.Show do
               >
                 <%= for task <- filtered_tasks do %>
                   <div
-                    class="card bg-base-200 shadow-sm cursor-move hover:shadow-md transition-shadow"
+                    class="bg-base-100 border border-primary/10 rounded p-3 cursor-move hover:border-primary/40 transition-colors group"
                     id={"task-#{task.id}"}
                     data-id={task.id}
                   >
-                    <div class="card-body p-3">
-                      <!-- Task Header -->
-                      <div class="flex items-start gap-2">
-                        <!-- Priority indicator -->
-                        <span class={"font-bold text-xs #{priority_color(task.priority)}"}>
-                          <%= priority_label(task.priority) %>
-                        </span>
-                        <!-- Title - clickable to open modal -->
-                        <p
-                          class="text-sm flex-1 cursor-pointer hover:text-primary"
-                          phx-click="open_task"
-                          phx-value-id={task.id}
-                        >
-                          <%= task.title %>
-                        </p>
-                        <!-- Quick actions -->
-                        <div class="flex gap-1 opacity-0 group-hover:opacity-100">
-                          <button phx-click="delete_task" phx-value-id={task.id} data-confirm="Delete this task?" class="btn btn-ghost btn-xs btn-square text-error">
-                            <.icon name="hero-trash" class="w-3 h-3" />
-                          </button>
-                        </div>
+                    <!-- Task Header -->
+                    <div class="flex items-start gap-2">
+                      <!-- Priority indicator -->
+                      <span class={"font-bold text-xs #{priority_color(task.priority)}"}>
+                        <%= priority_label(task.priority) %>
+                      </span>
+                      <!-- Title - clickable to open modal -->
+                      <p
+                        class="text-sm flex-1 cursor-pointer hover:text-primary"
+                        phx-click="open_task"
+                        phx-value-id={task.id}
+                      >
+                        <%= task.title %>
+                      </p>
+                      <!-- Quick actions -->
+                      <div class="flex gap-1 opacity-0 group-hover:opacity-100">
+                        <button phx-click="delete_task" phx-value-id={task.id} data-confirm="Rescind this directive?" class="btn btn-ghost btn-xs btn-square text-error">
+                          <.icon name="hero-trash" class="w-3 h-3" />
+                        </button>
                       </div>
-
-                      <!-- Labels -->
-                      <%= if task.labels != [] do %>
-                        <div class="flex flex-wrap gap-1 mt-2">
-                          <%= for label <- task.labels do %>
-                            <span
-                              class="badge badge-sm text-white"
-                              style={"background-color: #{label.color}"}
-                            >
-                              <%= label.name %>
-                            </span>
-                          <% end %>
-                        </div>
-                      <% end %>
-
-                      <!-- Due date -->
-                      <%= if task.due_date do %>
-                        <div class={"text-xs mt-2 #{due_date_class(task.due_date)}"}>
-                          <.icon name="hero-calendar" class="w-3 h-3 inline" />
-                          <%= task.due_date %>
-                          <%= if Date.compare(task.due_date, Date.utc_today()) == :lt do %>
-                            <span class="text-error">(overdue)</span>
-                          <% end %>
-                        </div>
-                      <% end %>
                     </div>
+
+                    <!-- Labels -->
+                    <%= if task.labels != [] do %>
+                      <div class="flex flex-wrap gap-1 mt-2">
+                        <%= for label <- task.labels do %>
+                          <span
+                            class="text-xs px-1.5 py-0.5 rounded text-white"
+                            style={"background-color: #{label.color}"}
+                          >
+                            <%= label.name %>
+                          </span>
+                        <% end %>
+                      </div>
+                    <% end %>
+
+                    <!-- Due date -->
+                    <%= if task.due_date do %>
+                      <div class={"text-xs mt-2 #{due_date_class(task.due_date)}"}>
+                        <.icon name="hero-calendar" class="w-3 h-3 inline" />
+                        <%= task.due_date %>
+                        <%= if Date.compare(task.due_date, Date.utc_today()) == :lt do %>
+                          <span class="text-error font-bold">(overdue)</span>
+                        <% end %>
+                      </div>
+                    <% end %>
                   </div>
                 <% end %>
               </div>
 
               <!-- Add Task -->
-              <div class="p-2 border-t border-base-200">
+              <div class="p-2 border-t border-primary/20">
                 <%= if @new_task_column_id == column.id do %>
                   <form phx-submit="create_task" class="space-y-2">
                     <input type="hidden" name="column_id" value={column.id} />
                     <input
                       type="text"
                       name="title"
-                      placeholder="Task title..."
-                      class="input input-sm input-bordered w-full"
+                      placeholder="Directive description..."
+                      class="input input-imperial input-sm w-full"
                       autofocus
                     />
                     <div class="flex gap-2">
-                      <button type="submit" class="btn btn-primary btn-sm flex-1">Add</button>
-                      <button type="button" phx-click="cancel_new_task" class="btn btn-ghost btn-sm">Cancel</button>
+                      <button type="submit" class="btn btn-imperial-primary btn-sm flex-1">Issue</button>
+                      <button type="button" phx-click="cancel_new_task" class="btn btn-imperial btn-sm">Cancel</button>
                     </div>
                   </form>
                 <% else %>
-                  <button phx-click="show_new_task" phx-value-column-id={column.id} class="btn btn-ghost btn-sm w-full justify-start">
+                  <button phx-click="show_new_task" phx-value-column-id={column.id} class="btn btn-ghost btn-sm w-full justify-start text-primary hover:bg-primary/10">
                     <.icon name="hero-plus" class="w-4 h-4" />
-                    Add task
+                    Issue Directive
                   </button>
                 <% end %>
               </div>
@@ -745,9 +748,9 @@ defmodule AuroraWeb.BoardLive.Show do
 
           <!-- Add Column Button -->
           <div class="flex-shrink-0 w-80">
-            <button phx-click="add_column" class="btn btn-ghost w-full justify-start">
+            <button phx-click="add_column" class="btn btn-imperial w-full justify-start">
               <.icon name="hero-plus" class="w-4 h-4" />
-              Add Column
+              Add Division
             </button>
           </div>
         </div>
@@ -756,10 +759,10 @@ defmodule AuroraWeb.BoardLive.Show do
       <!-- Task Detail Modal -->
       <%= if @selected_task do %>
         <div class="modal modal-open">
-          <div class="modal-box max-w-2xl">
+          <div class="modal-box card-ornate border border-primary/50 max-w-2xl">
             <div class="flex justify-between items-center mb-4">
-              <h3 class="font-bold text-lg">Edit Task</h3>
-              <button phx-click="close_task_modal" class="btn btn-ghost btn-sm btn-circle">
+              <h3 class="panel-header mb-0 pb-0 border-0">Edit Directive</h3>
+              <button phx-click="close_task_modal" class="btn btn-ghost btn-sm text-primary">
                 <.icon name="hero-x-mark" class="w-5 h-5" />
               </button>
             </div>
@@ -767,32 +770,32 @@ defmodule AuroraWeb.BoardLive.Show do
             <form phx-submit="save_task" class="space-y-4">
               <!-- Title -->
               <div class="form-control">
-                <label class="label"><span class="label-text font-semibold">Title</span></label>
+                <label class="label"><span class="stat-block-label">Directive</span></label>
                 <input
                   type="text"
                   name="title"
                   value={@selected_task.title}
-                  class="input input-bordered"
+                  class="input input-imperial"
                   required
                 />
               </div>
 
               <!-- Description -->
               <div class="form-control">
-                <label class="label"><span class="label-text font-semibold">Description</span></label>
+                <label class="label"><span class="stat-block-label">Mission Details</span></label>
                 <textarea
                   name="description"
-                  class="textarea textarea-bordered h-24"
-                  placeholder="Add a description..."
+                  class="textarea input-imperial h-24"
+                  placeholder="Provide mission briefing..."
                 ><%= @selected_task.description %></textarea>
               </div>
 
               <!-- Priority -->
               <div class="form-control">
-                <label class="label"><span class="label-text font-semibold">Priority</span></label>
+                <label class="label"><span class="stat-block-label">Priority Level</span></label>
                 <div class="flex gap-2">
                   <%= for p <- 1..4 do %>
-                    <label class={"btn btn-sm #{if @selected_task.priority == p, do: "btn-primary", else: "btn-outline"}"}>
+                    <label class={"btn btn-sm #{if @selected_task.priority == p, do: "btn-imperial-primary", else: "btn-imperial"}"}>
                       <input
                         type="radio"
                         name="priority"
@@ -808,18 +811,18 @@ defmodule AuroraWeb.BoardLive.Show do
 
               <!-- Due Date -->
               <div class="form-control">
-                <label class="label"><span class="label-text font-semibold">Due Date</span></label>
+                <label class="label"><span class="stat-block-label">Deadline</span></label>
                 <input
                   type="date"
                   name="due_date"
                   value={@selected_task.due_date}
-                  class="input input-bordered w-full max-w-xs"
+                  class="input input-imperial w-full max-w-xs"
                 />
               </div>
 
               <!-- Labels -->
               <div class="form-control">
-                <label class="label"><span class="label-text font-semibold">Labels</span></label>
+                <label class="label"><span class="stat-block-label">Insignias</span></label>
                 <div class="flex flex-wrap gap-2">
                   <%= for label <- @labels do %>
                     <% has_label = Enum.any?(@selected_task.labels, & &1.id == label.id) %>
@@ -828,17 +831,17 @@ defmodule AuroraWeb.BoardLive.Show do
                       phx-click="toggle_task_label"
                       phx-value-task-id={@selected_task.id}
                       phx-value-label-id={label.id}
-                      class={"badge badge-lg cursor-pointer #{if has_label, do: "text-white", else: "badge-outline"}"}
+                      class={"px-3 py-1 rounded cursor-pointer border transition-colors #{if has_label, do: "text-white", else: "bg-transparent"}"}
                       style={if has_label, do: "background-color: #{label.color}; border-color: #{label.color}", else: "border-color: #{label.color}; color: #{label.color}"}
                     >
                       <%= if has_label do %>
-                        <.icon name="hero-check" class="w-3 h-3 mr-1" />
+                        <.icon name="hero-check" class="w-3 h-3 inline mr-1" />
                       <% end %>
                       <%= label.name %>
                     </button>
                   <% end %>
                   <%= if Enum.empty?(@labels) do %>
-                    <span class="text-sm text-base-content/60">No labels available. Create labels from the Labels menu.</span>
+                    <span class="text-sm text-base-content/60 italic">No insignias available. Create insignias from the menu.</span>
                   <% end %>
                 </div>
                 <!-- Hidden field to track label IDs -->
@@ -850,22 +853,24 @@ defmodule AuroraWeb.BoardLive.Show do
               </div>
 
               <!-- Actions -->
-              <div class="modal-action">
+              <div class="flex justify-between pt-4">
                 <button
                   type="button"
                   phx-click="delete_task"
                   phx-value-id={@selected_task.id}
-                  data-confirm="Are you sure you want to delete this task?"
-                  class="btn btn-error btn-outline mr-auto"
+                  data-confirm="Rescind this directive permanently?"
+                  class="btn btn-imperial-danger"
                 >
-                  Delete
+                  Rescind
                 </button>
-                <button type="button" phx-click="close_task_modal" class="btn btn-ghost">Cancel</button>
-                <button type="submit" class="btn btn-primary">Save</button>
+                <div class="flex gap-2">
+                  <button type="button" phx-click="close_task_modal" class="btn btn-imperial">Cancel</button>
+                  <button type="submit" class="btn btn-imperial-primary">Confirm</button>
+                </div>
               </div>
             </form>
           </div>
-          <div class="modal-backdrop" phx-click="close_task_modal"></div>
+          <div class="modal-backdrop bg-base-300/80" phx-click="close_task_modal"></div>
         </div>
       <% end %>
     </div>

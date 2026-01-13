@@ -9,7 +9,7 @@ defmodule AuroraWeb.FinanceLive.Index do
 
     {:ok,
      socket
-     |> assign(:page_title, "Finance")
+     |> assign(:page_title, "Treasury")
      |> assign(:view_month, today)
      |> assign(:show_form, false)
      |> assign(:editing_transaction, nil)
@@ -143,58 +143,65 @@ defmodule AuroraWeb.FinanceLive.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="container mx-auto px-4 py-8">
+    <div class="min-h-screen bg-base-300">
       <!-- Header -->
-      <div class="flex justify-between items-center mb-8">
-        <div class="flex items-center gap-4">
-          <.link navigate={~p"/"} class="btn btn-ghost btn-sm">
-            <.icon name="hero-arrow-left" class="w-4 h-4" />
-          </.link>
-          <h1 class="text-3xl font-bold">Finance</h1>
-        </div>
-        <button phx-click="show_form" class="btn btn-primary">
-          <.icon name="hero-plus" class="w-4 h-4" />
-          Add Transaction
-        </button>
-      </div>
-
-      <!-- Month Navigation -->
-      <div class="flex justify-center items-center gap-4 mb-8">
-        <button phx-click="prev_month" class="btn btn-ghost btn-sm">
-          <.icon name="hero-chevron-left" class="w-5 h-5" />
-        </button>
-        <h2 class="text-xl font-semibold w-48 text-center"><%= format_month(@view_month) %></h2>
-        <button phx-click="next_month" class="btn btn-ghost btn-sm">
-          <.icon name="hero-chevron-right" class="w-5 h-5" />
-        </button>
-      </div>
-
-      <!-- Summary Cards -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <div class="stat bg-base-100 shadow rounded-box">
-          <div class="stat-title">Income</div>
-          <div class="stat-value text-success">$<%= format_amount(@summary.income) %></div>
-        </div>
-        <div class="stat bg-base-100 shadow rounded-box">
-          <div class="stat-title">Expenses</div>
-          <div class="stat-value text-error">$<%= format_amount(@summary.expenses) %></div>
-        </div>
-        <div class="stat bg-base-100 shadow rounded-box">
-          <div class="stat-title">Balance</div>
-          <div class={"stat-value #{if Decimal.compare(@summary.balance, Decimal.new(0)) == :lt, do: "text-error", else: "text-success"}"}>
-            <%= if Decimal.compare(@summary.balance, Decimal.new(0)) == :lt, do: "-" %>$<%= format_amount(Decimal.abs(@summary.balance)) %>
+      <header class="border-b border-primary/30 bg-base-200">
+        <div class="container mx-auto px-4 py-4">
+          <div class="flex justify-between items-center">
+            <div class="flex items-center gap-4">
+              <.link navigate={~p"/"} class="btn btn-ghost btn-sm text-primary">
+                <.icon name="hero-arrow-left" class="w-4 h-4" />
+              </.link>
+              <div class="flex items-center gap-3">
+                <.icon name="hero-banknotes" class="w-6 h-6 text-primary" />
+                <h1 class="text-2xl tracking-wider text-primary">Treasury</h1>
+              </div>
+            </div>
+            <button phx-click="show_form" class="btn btn-imperial-primary btn-sm">
+              <.icon name="hero-plus" class="w-4 h-4" />
+              Add Transaction
+            </button>
           </div>
         </div>
-      </div>
+      </header>
 
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Transactions List -->
-        <div class="lg:col-span-2 card bg-base-100 shadow-xl">
-          <div class="card-body">
-            <h2 class="card-title mb-4">Transactions</h2>
+      <main class="container mx-auto px-4 py-6 pb-24">
+        <!-- Month Navigation -->
+        <div class="flex justify-center items-center gap-4 mb-8">
+          <button phx-click="prev_month" class="btn btn-imperial btn-sm">
+            <.icon name="hero-chevron-left" class="w-5 h-5" />
+          </button>
+          <h2 class="text-xl w-48 text-center text-primary"><%= format_month(@view_month) %></h2>
+          <button phx-click="next_month" class="btn btn-imperial btn-sm">
+            <.icon name="hero-chevron-right" class="w-5 h-5" />
+          </button>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <div class="card card-ornate corner-tl corner-tr p-4 text-center">
+            <div class="stat-block-label mb-2">Income</div>
+            <div class="text-2xl font-mono text-success">+$<%= format_amount(@summary.income) %></div>
+          </div>
+          <div class="card card-ornate p-4 text-center">
+            <div class="stat-block-label mb-2">Expenses</div>
+            <div class="text-2xl font-mono text-error">-$<%= format_amount(@summary.expenses) %></div>
+          </div>
+          <div class="card card-ornate corner-bl corner-br p-4 text-center">
+            <div class="stat-block-label mb-2">Balance</div>
+            <div class={"text-2xl font-mono #{if Decimal.compare(@summary.balance, Decimal.new(0)) == :lt, do: "text-error", else: "text-primary glow-gold-text"}"}>
+              <%= if Decimal.compare(@summary.balance, Decimal.new(0)) == :lt, do: "-" %>$<%= format_amount(Decimal.abs(@summary.balance)) %>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Transactions List -->
+          <div class="lg:col-span-2 card card-ornate corner-tl corner-tr corner-bl corner-br p-4">
+            <h2 class="panel-header">Transactions</h2>
 
             <%= if Enum.empty?(@transactions) do %>
-              <p class="text-base-content/60 text-center py-8">No transactions this month.</p>
+              <p class="text-base-content/50 text-center py-8 italic">No transactions this month.</p>
             <% else %>
               <div class="overflow-x-auto">
                 <table class="table">
@@ -209,14 +216,14 @@ defmodule AuroraWeb.FinanceLive.Index do
                   </thead>
                   <tbody>
                     <%= for transaction <- @transactions do %>
-                      <tr class="hover">
-                        <td class="text-sm"><%= format_date(transaction.transaction_date) %></td>
+                      <tr class="hover:bg-base-200/50">
+                        <td class="text-sm font-mono"><%= format_date(transaction.transaction_date) %></td>
                         <td>
                           <%= transaction.description || "-" %>
                         </td>
                         <td>
                           <%= if transaction.category do %>
-                            <span class="badge badge-sm"><%= Finance.category_label(transaction.category) %></span>
+                            <span class="badge-imperial"><%= Finance.category_label(transaction.category) %></span>
                           <% end %>
                         </td>
                         <td class={"text-right font-mono #{if transaction.is_income, do: "text-success", else: "text-error"}"}>
@@ -226,7 +233,7 @@ defmodule AuroraWeb.FinanceLive.Index do
                           <button
                             phx-click="edit_transaction"
                             phx-value-id={transaction.id}
-                            class="btn btn-ghost btn-xs"
+                            class="btn btn-ghost btn-xs text-primary"
                           >
                             <.icon name="hero-pencil" class="w-3 h-3" />
                           </button>
@@ -238,59 +245,55 @@ defmodule AuroraWeb.FinanceLive.Index do
               </div>
             <% end %>
           </div>
-        </div>
 
-        <!-- Expenses by Category -->
-        <div class="card bg-base-100 shadow-xl">
-          <div class="card-body">
-            <h2 class="card-title mb-4">Expenses by Category</h2>
+          <!-- Expenses by Category -->
+          <div class="card card-ornate corner-tl corner-tr corner-bl corner-br p-4">
+            <h2 class="panel-header">Expenses by Category</h2>
 
             <%= if Enum.empty?(@by_category) do %>
-              <p class="text-base-content/60 text-center py-8">No expenses this month.</p>
+              <p class="text-base-content/50 text-center py-8 italic">No expenses this month.</p>
             <% else %>
               <% total = total_expenses(@by_category) %>
-              <div class="space-y-3">
+              <div class="space-y-4">
                 <%= for {category, amount} <- @by_category do %>
                   <div>
                     <div class="flex justify-between text-sm mb-1">
                       <span class="flex items-center gap-2">
-                        <.icon name={Finance.category_icon(category)} class="w-4 h-4" />
+                        <.icon name={Finance.category_icon(category)} class="w-4 h-4 text-primary" />
                         <%= Finance.category_label(category) %>
                       </span>
-                      <span class="font-mono">$<%= format_amount(amount) %></span>
+                      <span class="font-mono text-error">$<%= format_amount(amount) %></span>
                     </div>
-                    <progress
-                      class={"progress #{Finance.category_color(category)}"}
-                      value={category_percentage(amount, total)}
-                      max="100"
-                    ></progress>
-                    <div class="text-xs text-base-content/60 text-right">
+                    <div class="progress-rpg h-3">
+                      <div class="progress-rpg-fill fill-error" style={"width: #{category_percentage(amount, total)}%"}></div>
+                    </div>
+                    <div class="text-xs text-base-content/50 text-right mt-1">
                       <%= category_percentage(amount, total) %>%
                     </div>
                   </div>
                 <% end %>
               </div>
 
-              <div class="divider"></div>
+              <div class="divider-ornate my-4 text-xs">◆</div>
 
               <div class="flex justify-between font-semibold">
-                <span>Total Expenses</span>
-                <span class="font-mono">$<%= format_amount(total) %></span>
+                <span class="stat-block-label">Total Expenses</span>
+                <span class="font-mono text-error">$<%= format_amount(total) %></span>
               </div>
             <% end %>
           </div>
         </div>
-      </div>
+      </main>
 
       <!-- Transaction Form Modal -->
       <%= if @show_form do %>
         <div class="modal modal-open">
-          <div class="modal-box">
+          <div class="modal-box card-ornate border border-primary/50">
             <div class="flex justify-between items-center mb-4">
-              <h3 class="font-bold text-lg">
+              <h3 class="panel-header mb-0 pb-0 border-0">
                 <%= if @editing_transaction, do: "Edit Transaction", else: "Add Transaction" %>
               </h3>
-              <button phx-click="close_form" class="btn btn-ghost btn-sm btn-circle">
+              <button phx-click="close_form" class="btn btn-ghost btn-sm text-primary">
                 <.icon name="hero-x-mark" class="w-5 h-5" />
               </button>
             </div>
@@ -299,10 +302,10 @@ defmodule AuroraWeb.FinanceLive.Index do
               <!-- Type Toggle -->
               <div class="form-control">
                 <label class="label">
-                  <span class="label-text font-semibold">Type</span>
+                  <span class="stat-block-label">Type</span>
                 </label>
                 <div class="flex gap-2">
-                  <label class={"btn flex-1 #{if !@editing_transaction || !@editing_transaction.is_income, do: "btn-error", else: ""}"}>
+                  <label class={"btn flex-1 btn-imperial #{if !@editing_transaction || !@editing_transaction.is_income, do: "btn-imperial-danger"}"}>
                     <input
                       type="radio"
                       name="is_income"
@@ -313,7 +316,7 @@ defmodule AuroraWeb.FinanceLive.Index do
                     <.icon name="hero-arrow-trending-down" class="w-4 h-4" />
                     Expense
                   </label>
-                  <label class={"btn flex-1 #{if @editing_transaction && @editing_transaction.is_income, do: "btn-success", else: ""}"}>
+                  <label class={"btn flex-1 btn-imperial #{if @editing_transaction && @editing_transaction.is_income, do: "!bg-success/20 !border-success !text-success"}"}>
                     <input
                       type="radio"
                       name="is_income"
@@ -330,17 +333,17 @@ defmodule AuroraWeb.FinanceLive.Index do
               <!-- Amount -->
               <div class="form-control">
                 <label class="label">
-                  <span class="label-text font-semibold">Amount</span>
+                  <span class="stat-block-label">Amount</span>
                 </label>
-                <label class="input input-bordered flex items-center gap-2">
-                  <span>$</span>
+                <label class="input input-imperial flex items-center gap-2">
+                  <span class="text-primary">$</span>
                   <input
                     type="number"
                     name="amount"
                     step="0.01"
                     min="0"
                     value={if @editing_transaction, do: format_amount(@editing_transaction.amount), else: ""}
-                    class="grow"
+                    class="grow bg-transparent focus:outline-none"
                     placeholder="0.00"
                     required
                   />
@@ -350,13 +353,13 @@ defmodule AuroraWeb.FinanceLive.Index do
               <!-- Description -->
               <div class="form-control">
                 <label class="label">
-                  <span class="label-text font-semibold">Description</span>
+                  <span class="stat-block-label">Description</span>
                 </label>
                 <input
                   type="text"
                   name="description"
                   value={if @editing_transaction, do: @editing_transaction.description, else: ""}
-                  class="input input-bordered"
+                  class="input input-imperial"
                   placeholder="What was this for?"
                 />
               </div>
@@ -364,9 +367,9 @@ defmodule AuroraWeb.FinanceLive.Index do
               <!-- Category -->
               <div class="form-control">
                 <label class="label">
-                  <span class="label-text font-semibold">Category</span>
+                  <span class="stat-block-label">Category</span>
                 </label>
-                <select name="category" class="select select-bordered">
+                <select name="category" class="select input-imperial">
                   <option value="">Select category</option>
                   <%= for cat <- Finance.categories() do %>
                     <option
@@ -382,40 +385,68 @@ defmodule AuroraWeb.FinanceLive.Index do
               <!-- Date -->
               <div class="form-control">
                 <label class="label">
-                  <span class="label-text font-semibold">Date</span>
+                  <span class="stat-block-label">Date</span>
                 </label>
                 <input
                   type="date"
                   name="transaction_date"
                   value={if @editing_transaction, do: @editing_transaction.transaction_date, else: Date.utc_today()}
-                  class="input input-bordered"
+                  class="input input-imperial"
                   required
                 />
               </div>
 
               <!-- Actions -->
-              <div class="modal-action">
+              <div class="flex justify-between pt-4">
                 <%= if @editing_transaction do %>
                   <button
                     type="button"
                     phx-click="delete_transaction"
                     phx-value-id={@editing_transaction.id}
                     data-confirm="Delete this transaction?"
-                    class="btn btn-error btn-outline mr-auto"
+                    class="btn btn-imperial-danger"
                   >
                     Delete
                   </button>
+                <% else %>
+                  <div></div>
                 <% end %>
-                <button type="button" phx-click="close_form" class="btn btn-ghost">Cancel</button>
-                <button type="submit" class="btn btn-primary">
-                  <%= if @editing_transaction, do: "Save", else: "Add" %>
-                </button>
+                <div class="flex gap-2">
+                  <button type="button" phx-click="close_form" class="btn btn-imperial">Cancel</button>
+                  <button type="submit" class="btn btn-imperial-primary">
+                    <%= if @editing_transaction, do: "Save", else: "Add" %>
+                  </button>
+                </div>
               </div>
             </form>
           </div>
-          <div class="modal-backdrop" phx-click="close_form"></div>
+          <div class="modal-backdrop bg-base-300/80" phx-click="close_form"></div>
         </div>
       <% end %>
+
+      <!-- HUD Navigation -->
+      <nav class="fixed bottom-0 left-0 right-0 hud-nav">
+        <.link navigate={~p"/boards"} class="hud-nav-item">
+          <.icon name="hero-view-columns" class="hud-nav-icon" />
+          <span class="hud-nav-label">Operations</span>
+        </.link>
+        <.link navigate={~p"/goals"} class="hud-nav-item">
+          <.icon name="hero-flag" class="hud-nav-icon" />
+          <span class="hud-nav-label">Quests</span>
+        </.link>
+        <.link navigate={~p"/habits"} class="hud-nav-item">
+          <.icon name="hero-bolt" class="hud-nav-icon" />
+          <span class="hud-nav-label">Rituals</span>
+        </.link>
+        <.link navigate={~p"/journal"} class="hud-nav-item">
+          <.icon name="hero-book-open" class="hud-nav-icon" />
+          <span class="hud-nav-label">Chronicle</span>
+        </.link>
+        <.link navigate={~p"/finance"} class="hud-nav-item hud-nav-item-active">
+          <.icon name="hero-banknotes" class="hud-nav-icon" />
+          <span class="hud-nav-label">Treasury</span>
+        </.link>
+      </nav>
     </div>
     """
   end

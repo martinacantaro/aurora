@@ -17,76 +17,87 @@
   themes: false;
 }
 
-/* daisyUI theme plugin. You can update this file by fetching the latest version with:
-  curl -sLO https://github.com/saadeghi/daisyui/releases/latest/download/daisyui-theme.js
-  We ship with two themes, a light one inspired on Phoenix colors and a dark one inspired
-  on Elixir colors. Build your own at: https://daisyui.com/theme-generator/ */
+/* ═══════════════════════════════════════════════════════════════════════════
+   IMPERIAL THEME - Warhammer 40K Rogue Trader Inspired
+   Dark gothic aesthetic with gold/brass accents
+   ═══════════════════════════════════════════════════════════════════════════ */
 @plugin "../vendor/daisyui-theme" {
-  name: "dark";
-  default: false;
+  name: "imperial";
+  default: true;
   prefersdark: true;
   color-scheme: "dark";
-  --color-base-100: oklch(30.33% 0.016 252.42);
-  --color-base-200: oklch(25.26% 0.014 253.1);
-  --color-base-300: oklch(20.15% 0.012 254.09);
-  --color-base-content: oklch(97.807% 0.029 256.847);
-  --color-primary: oklch(58% 0.233 277.117);
-  --color-primary-content: oklch(96% 0.018 272.314);
-  --color-secondary: oklch(58% 0.233 277.117);
-  --color-secondary-content: oklch(96% 0.018 272.314);
-  --color-accent: oklch(60% 0.25 292.717);
-  --color-accent-content: oklch(96% 0.016 293.756);
-  --color-neutral: oklch(37% 0.044 257.287);
-  --color-neutral-content: oklch(98% 0.003 247.858);
-  --color-info: oklch(58% 0.158 241.966);
-  --color-info-content: oklch(97% 0.013 236.62);
-  --color-success: oklch(60% 0.118 184.704);
-  --color-success-content: oklch(98% 0.014 180.72);
-  --color-warning: oklch(66% 0.179 58.318);
-  --color-warning-content: oklch(98% 0.022 95.277);
-  --color-error: oklch(58% 0.253 17.585);
-  --color-error-content: oklch(96% 0.015 12.422);
-  --radius-selector: 0.25rem;
-  --radius-field: 0.25rem;
-  --radius-box: 0.5rem;
-  --size-selector: 0.21875rem;
-  --size-field: 0.21875rem;
-  --border: 1.5px;
+  /* Deep blue-black backgrounds */
+  --color-base-100: oklch(15% 0.02 270);
+  --color-base-200: oklch(12% 0.018 270);
+  --color-base-300: oklch(9% 0.015 270);
+  --color-base-content: oklch(92% 0.02 85);
+  /* Gold/Brass primary */
+  --color-primary: oklch(72% 0.15 85);
+  --color-primary-content: oklch(15% 0.02 85);
+  /* Muted gold secondary */
+  --color-secondary: oklch(60% 0.12 85);
+  --color-secondary-content: oklch(15% 0.02 85);
+  /* Bright gold accent */
+  --color-accent: oklch(78% 0.16 90);
+  --color-accent-content: oklch(15% 0.02 85);
+  /* Dark purple-gray neutral */
+  --color-neutral: oklch(25% 0.025 280);
+  --color-neutral-content: oklch(88% 0.02 85);
+  /* Info - Steel blue */
+  --color-info: oklch(55% 0.12 250);
+  --color-info-content: oklch(95% 0.01 250);
+  /* Success - Dark emerald */
+  --color-success: oklch(50% 0.14 155);
+  --color-success-content: oklch(95% 0.02 155);
+  /* Warning - Amber */
+  --color-warning: oklch(70% 0.18 70);
+  --color-warning-content: oklch(15% 0.02 70);
+  /* Error - Crimson */
+  --color-error: oklch(50% 0.22 25);
+  --color-error-content: oklch(95% 0.02 25);
+  /* Sharp corners for gothic feel */
+  --radius-selector: 0.125rem;
+  --radius-field: 0.125rem;
+  --radius-box: 0.25rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
   --depth: 1;
   --noise: 0;
 }
 
+/* Keep a light theme option but style it imperially too */
 @plugin "../vendor/daisyui-theme" {
   name: "light";
-  default: true;
+  default: false;
   prefersdark: false;
   color-scheme: "light";
-  --color-base-100: oklch(98% 0 0);
-  --color-base-200: oklch(96% 0.001 286.375);
-  --color-base-300: oklch(92% 0.004 286.32);
-  --color-base-content: oklch(21% 0.006 285.885);
-  --color-primary: oklch(70% 0.213 47.604);
-  --color-primary-content: oklch(98% 0.016 73.684);
-  --color-secondary: oklch(55% 0.027 264.364);
-  --color-secondary-content: oklch(98% 0.002 247.839);
-  --color-accent: oklch(0% 0 0);
-  --color-accent-content: oklch(100% 0 0);
-  --color-neutral: oklch(44% 0.017 285.786);
-  --color-neutral-content: oklch(98% 0 0);
-  --color-info: oklch(62% 0.214 259.815);
-  --color-info-content: oklch(97% 0.014 254.604);
-  --color-success: oklch(70% 0.14 182.503);
-  --color-success-content: oklch(98% 0.014 180.72);
-  --color-warning: oklch(66% 0.179 58.318);
-  --color-warning-content: oklch(98% 0.022 95.277);
-  --color-error: oklch(58% 0.253 17.585);
-  --color-error-content: oklch(96% 0.015 12.422);
-  --radius-selector: 0.25rem;
-  --radius-field: 0.25rem;
-  --radius-box: 0.5rem;
-  --size-selector: 0.21875rem;
-  --size-field: 0.21875rem;
-  --border: 1.5px;
+  --color-base-100: oklch(95% 0.01 85);
+  --color-base-200: oklch(90% 0.015 85);
+  --color-base-300: oklch(85% 0.02 85);
+  --color-base-content: oklch(20% 0.02 270);
+  --color-primary: oklch(55% 0.15 85);
+  --color-primary-content: oklch(98% 0.01 85);
+  --color-secondary: oklch(45% 0.12 85);
+  --color-secondary-content: oklch(98% 0.01 85);
+  --color-accent: oklch(50% 0.18 85);
+  --color-accent-content: oklch(98% 0.01 85);
+  --color-neutral: oklch(35% 0.02 270);
+  --color-neutral-content: oklch(98% 0.01 85);
+  --color-info: oklch(50% 0.15 250);
+  --color-info-content: oklch(98% 0.01 250);
+  --color-success: oklch(45% 0.15 155);
+  --color-success-content: oklch(98% 0.01 155);
+  --color-warning: oklch(60% 0.18 70);
+  --color-warning-content: oklch(15% 0.02 70);
+  --color-error: oklch(50% 0.22 25);
+  --color-error-content: oklch(98% 0.01 25);
+  --radius-selector: 0.125rem;
+  --radius-field: 0.125rem;
+  --radius-box: 0.25rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
   --depth: 1;
   --noise: 0;
 }
@@ -96,10 +107,450 @@
 @custom-variant phx-submit-loading (.phx-submit-loading&, .phx-submit-loading &);
 @custom-variant phx-change-loading (.phx-change-loading&, .phx-change-loading &);
 
-/* Use the data attribute for dark mode  */
-@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+/* Use the data attribute for theme switching */
+@custom-variant dark (&:where([data-theme=imperial], [data-theme=imperial] *));
 
 /* Make LiveView wrapper divs transparent for layout */
 [data-phx-session], [data-phx-teleported-src] { display: contents }
 
-/* This file is for your main application CSS */
+/* ═══════════════════════════════════════════════════════════════════════════
+   TYPOGRAPHY - Gothic fonts
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+body {
+  font-family: 'Crimson Text', Georgia, serif;
+}
+
+h1, h2, h3, h4, h5, h6,
+.font-title {
+  font-family: 'Cinzel', 'Times New Roman', serif;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.font-body {
+  font-family: 'Crimson Text', Georgia, serif;
+}
+
+.font-mono {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RPG COMPONENTS - Ornate styling
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Ornate Card Frame */
+.card-ornate {
+  position: relative;
+  background: linear-gradient(135deg,
+    oklch(15% 0.02 270) 0%,
+    oklch(12% 0.025 280) 50%,
+    oklch(15% 0.02 270) 100%
+  );
+  border: 1px solid oklch(55% 0.12 85 / 0.5);
+  box-shadow:
+    inset 0 1px 0 oklch(72% 0.15 85 / 0.1),
+    inset 0 -1px 0 oklch(0% 0 0 / 0.3),
+    0 4px 20px oklch(0% 0 0 / 0.5);
+}
+
+.card-ornate::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 1px solid oklch(72% 0.15 85 / 0.15);
+  pointer-events: none;
+}
+
+/* Corner decorations */
+.corner-tl::before,
+.corner-tr::before,
+.corner-bl::before,
+.corner-br::before {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-color: oklch(72% 0.15 85 / 0.6);
+  border-style: solid;
+}
+
+.corner-tl::before { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+.corner-tr::after {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-color: oklch(72% 0.15 85 / 0.6);
+  border-style: solid;
+  top: -1px;
+  right: -1px;
+  border-width: 2px 2px 0 0;
+}
+.corner-bl::before { bottom: -1px; left: -1px; border-width: 0 0 2px 2px; }
+.corner-br::after {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-color: oklch(72% 0.15 85 / 0.6);
+  border-style: solid;
+  bottom: -1px;
+  right: -1px;
+  border-width: 0 2px 2px 0;
+}
+
+/* Section divider */
+.divider-ornate {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: oklch(72% 0.15 85 / 0.6);
+}
+
+.divider-ornate::before,
+.divider-ornate::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    oklch(72% 0.15 85 / 0.4) 20%,
+    oklch(72% 0.15 85 / 0.6) 50%,
+    oklch(72% 0.15 85 / 0.4) 80%,
+    transparent 100%
+  );
+}
+
+/* RPG Progress Bar */
+.progress-rpg {
+  position: relative;
+  height: 1.25rem;
+  background: oklch(10% 0.015 270);
+  border: 1px solid oklch(55% 0.12 85 / 0.5);
+  overflow: hidden;
+}
+
+.progress-rpg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg,
+    oklch(100% 0 0 / 0.05) 0%,
+    transparent 50%,
+    oklch(0% 0 0 / 0.1) 100%
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+.progress-rpg-fill {
+  height: 100%;
+  background: linear-gradient(180deg,
+    oklch(75% 0.15 85) 0%,
+    oklch(65% 0.14 85) 50%,
+    oklch(55% 0.13 85) 100%
+  );
+  box-shadow:
+    inset 0 1px 0 oklch(85% 0.1 85 / 0.5),
+    0 0 10px oklch(72% 0.15 85 / 0.3);
+  transition: width 0.5s ease-out;
+}
+
+.progress-rpg-fill.fill-success {
+  background: linear-gradient(180deg,
+    oklch(55% 0.15 155) 0%,
+    oklch(45% 0.14 155) 50%,
+    oklch(35% 0.13 155) 100%
+  );
+  box-shadow:
+    inset 0 1px 0 oklch(65% 0.1 155 / 0.5),
+    0 0 10px oklch(50% 0.14 155 / 0.3);
+}
+
+.progress-rpg-fill.fill-error {
+  background: linear-gradient(180deg,
+    oklch(55% 0.22 25) 0%,
+    oklch(45% 0.2 25) 50%,
+    oklch(35% 0.18 25) 100%
+  );
+  box-shadow:
+    inset 0 1px 0 oklch(65% 0.15 25 / 0.5),
+    0 0 10px oklch(50% 0.22 25 / 0.3);
+}
+
+.progress-rpg-fill.fill-info {
+  background: linear-gradient(180deg,
+    oklch(60% 0.12 250) 0%,
+    oklch(50% 0.11 250) 50%,
+    oklch(40% 0.1 250) 100%
+  );
+  box-shadow:
+    inset 0 1px 0 oklch(70% 0.08 250 / 0.5),
+    0 0 10px oklch(55% 0.12 250 / 0.3);
+}
+
+/* Stat block */
+.stat-block {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+}
+
+.stat-block-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  color: oklch(72% 0.15 85);
+}
+
+.stat-block-label {
+  font-family: 'Cinzel', serif;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: oklch(70% 0.05 85);
+}
+
+.stat-block-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1rem;
+  font-weight: 600;
+  color: oklch(92% 0.02 85);
+}
+
+/* Imperial buttons */
+.btn-imperial {
+  font-family: 'Cinzel', serif;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  background: linear-gradient(180deg,
+    oklch(25% 0.025 280) 0%,
+    oklch(20% 0.02 280) 100%
+  );
+  border: 1px solid oklch(55% 0.12 85 / 0.5);
+  color: oklch(72% 0.15 85);
+  transition: all 0.2s ease;
+}
+
+.btn-imperial:hover {
+  background: linear-gradient(180deg,
+    oklch(30% 0.03 280) 0%,
+    oklch(25% 0.025 280) 100%
+  );
+  border-color: oklch(72% 0.15 85 / 0.7);
+  box-shadow: 0 0 15px oklch(72% 0.15 85 / 0.2);
+}
+
+.btn-imperial-primary {
+  background: linear-gradient(180deg,
+    oklch(65% 0.14 85) 0%,
+    oklch(55% 0.13 85) 100%
+  );
+  color: oklch(15% 0.02 85);
+  border-color: oklch(72% 0.15 85);
+}
+
+.btn-imperial-primary:hover {
+  background: linear-gradient(180deg,
+    oklch(72% 0.15 85) 0%,
+    oklch(62% 0.14 85) 100%
+  );
+  box-shadow: 0 0 20px oklch(72% 0.15 85 / 0.4);
+}
+
+.btn-imperial-danger {
+  border-color: oklch(50% 0.22 25 / 0.5);
+  color: oklch(60% 0.2 25);
+}
+
+.btn-imperial-danger:hover {
+  background: linear-gradient(180deg,
+    oklch(35% 0.1 25) 0%,
+    oklch(25% 0.08 25) 100%
+  );
+  border-color: oklch(50% 0.22 25);
+  box-shadow: 0 0 15px oklch(50% 0.22 25 / 0.3);
+}
+
+/* Quest/Task item */
+.quest-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: oklch(12% 0.018 270);
+  border-left: 3px solid oklch(55% 0.12 85 / 0.5);
+  transition: all 0.2s ease;
+}
+
+.quest-item:hover {
+  background: oklch(15% 0.02 270);
+  border-left-color: oklch(72% 0.15 85);
+}
+
+.quest-item-active {
+  border-left-color: oklch(72% 0.15 85);
+  background: linear-gradient(90deg,
+    oklch(20% 0.03 85 / 0.2) 0%,
+    oklch(12% 0.018 270) 100%
+  );
+}
+
+.quest-item-complete {
+  border-left-color: oklch(50% 0.14 155);
+  opacity: 0.7;
+}
+
+.quest-diamond {
+  width: 0.75rem;
+  height: 0.75rem;
+  transform: rotate(45deg);
+  border: 1px solid currentColor;
+}
+
+.quest-diamond-filled {
+  background: currentColor;
+}
+
+/* Ritual/Habit checkbox */
+.ritual-check {
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid oklch(55% 0.12 85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.ritual-check-complete {
+  border-color: oklch(50% 0.14 155);
+  background: oklch(50% 0.14 155);
+  color: oklch(95% 0.02 155);
+}
+
+/* HUD Navigation */
+.hud-nav {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: linear-gradient(180deg,
+    oklch(12% 0.018 270) 0%,
+    oklch(9% 0.015 270) 100%
+  );
+  border-top: 1px solid oklch(55% 0.12 85 / 0.3);
+}
+
+.hud-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem 1rem;
+  color: oklch(60% 0.05 85);
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.hud-nav-item:hover {
+  color: oklch(72% 0.15 85);
+}
+
+.hud-nav-item-active {
+  color: oklch(72% 0.15 85);
+  background: oklch(72% 0.15 85 / 0.1);
+}
+
+.hud-nav-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.hud-nav-label {
+  font-family: 'Cinzel', serif;
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* Panel header */
+.panel-header {
+  font-family: 'Cinzel', serif;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: oklch(72% 0.15 85);
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
+  border-bottom: 1px solid oklch(55% 0.12 85 / 0.3);
+}
+
+/* Glow effects */
+.glow-gold {
+  box-shadow: 0 0 20px oklch(72% 0.15 85 / 0.3);
+}
+
+.glow-gold-text {
+  text-shadow: 0 0 10px oklch(72% 0.15 85 / 0.5);
+}
+
+/* Badge styles */
+.badge-imperial {
+  font-family: 'Cinzel', serif;
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.25rem 0.5rem;
+  background: oklch(25% 0.025 280);
+  border: 1px solid oklch(55% 0.12 85 / 0.5);
+  color: oklch(72% 0.15 85);
+}
+
+/* Inputs with imperial styling */
+.input-imperial {
+  background: oklch(10% 0.015 270);
+  border: 1px solid oklch(55% 0.12 85 / 0.3);
+  color: oklch(92% 0.02 85);
+  transition: all 0.2s ease;
+}
+
+.input-imperial:focus {
+  border-color: oklch(72% 0.15 85);
+  box-shadow: 0 0 10px oklch(72% 0.15 85 / 0.2);
+  outline: none;
+}
+
+.input-imperial::placeholder {
+  color: oklch(50% 0.02 270);
+}
+
+/* Override daisyUI card for imperial look */
+.card {
+  border: 1px solid oklch(55% 0.12 85 / 0.2);
+}
+
+.card-body h2 {
+  font-family: 'Cinzel', serif;
+}
+
+/* Modal styling */
+.modal-box {
+  background: linear-gradient(135deg,
+    oklch(15% 0.02 270) 0%,
+    oklch(12% 0.025 280) 100%
+  );
+  border: 1px solid oklch(55% 0.12 85 / 0.5);
+}
+
+/* Table imperial styling */
+.table th {
+  font-family: 'Cinzel', serif;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.75rem;
+  color: oklch(72% 0.15 85);
+}

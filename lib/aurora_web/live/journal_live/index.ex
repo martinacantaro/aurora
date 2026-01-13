@@ -6,14 +6,15 @@ defmodule AuroraWeb.JournalLive.Index do
   @impl true
   def mount(_params, _session, socket) do
     today = Date.utc_today()
+    entry = Journal.get_entry_for_date(today)
 
     {:ok,
      socket
-     |> assign(:page_title, "Journal")
+     |> assign(:page_title, "Chronicle")
      |> assign(:current_date, today)
      |> assign(:view_month, today)
-     |> assign(:selected_entry, nil)
-     |> assign(:editing, false)
+     |> assign(:selected_entry, entry)
+     |> assign(:editing, entry == nil)
      |> load_month_data()}
   end
 
@@ -155,18 +156,18 @@ defmodule AuroraWeb.JournalLive.Index do
   end
 
   defp day_class(date, current_date, view_month, entry_dates, today) do
-    classes = ["btn btn-sm w-10 h-10"]
+    classes = ["btn btn-sm w-10 h-10 btn-imperial"]
 
     classes =
       if date.month != view_month.month do
-        ["btn-ghost opacity-30" | classes]
+        ["opacity-30" | classes]
       else
-        ["btn-ghost" | classes]
+        classes
       end
 
     classes =
       if Date.compare(date, current_date) == :eq do
-        ["btn-primary" | classes -- ["btn-ghost"]]
+        ["!btn-imperial-primary" | classes]
       else
         classes
       end
@@ -180,7 +181,7 @@ defmodule AuroraWeb.JournalLive.Index do
 
     classes =
       if MapSet.member?(entry_dates, date) and Date.compare(date, current_date) != :eq do
-        ["bg-base-200" | classes]
+        ["!bg-success/20 !border-success/50" | classes]
       else
         classes
       end
@@ -191,31 +192,38 @@ defmodule AuroraWeb.JournalLive.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="container mx-auto px-4 py-8">
+    <div class="min-h-screen bg-base-300">
       <!-- Header -->
-      <div class="flex justify-between items-center mb-8">
-        <div class="flex items-center gap-4">
-          <.link navigate={~p"/"} class="btn btn-ghost btn-sm">
-            <.icon name="hero-arrow-left" class="w-4 h-4" />
-          </.link>
-          <h1 class="text-3xl font-bold">Journal</h1>
+      <header class="border-b border-primary/30 bg-base-200">
+        <div class="container mx-auto px-4 py-4">
+          <div class="flex justify-between items-center">
+            <div class="flex items-center gap-4">
+              <.link navigate={~p"/"} class="btn btn-ghost btn-sm text-primary">
+                <.icon name="hero-arrow-left" class="w-4 h-4" />
+              </.link>
+              <div class="flex items-center gap-3">
+                <.icon name="hero-book-open" class="w-6 h-6 text-primary" />
+                <h1 class="text-2xl tracking-wider text-primary">Chronicle</h1>
+              </div>
+            </div>
+            <button phx-click="today" class="btn btn-imperial-primary btn-sm">
+              Today
+            </button>
+          </div>
         </div>
-        <button phx-click="today" class="btn btn-primary btn-sm">
-          Today
-        </button>
-      </div>
+      </header>
 
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Calendar -->
-        <div class="card bg-base-100 shadow-xl">
-          <div class="card-body">
+      <main class="container mx-auto px-4 py-6 pb-24">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Calendar -->
+          <div class="card card-ornate corner-tl corner-tr corner-bl corner-br p-4">
             <!-- Month Navigation -->
             <div class="flex justify-between items-center mb-4">
-              <button phx-click="prev_month" class="btn btn-ghost btn-sm">
+              <button phx-click="prev_month" class="btn btn-imperial btn-sm">
                 <.icon name="hero-chevron-left" class="w-5 h-5" />
               </button>
-              <h2 class="text-lg font-semibold"><%= format_month(@view_month) %></h2>
-              <button phx-click="next_month" class="btn btn-ghost btn-sm">
+              <h2 class="text-lg text-primary"><%= format_month(@view_month) %></h2>
+              <button phx-click="next_month" class="btn btn-imperial btn-sm">
                 <.icon name="hero-chevron-right" class="w-5 h-5" />
               </button>
             </div>
@@ -223,7 +231,7 @@ defmodule AuroraWeb.JournalLive.Index do
             <!-- Weekday Headers -->
             <div class="grid grid-cols-7 gap-1 mb-2">
               <%= for day <- ~w(Mon Tue Wed Thu Fri Sat Sun) do %>
-                <div class="text-center text-xs text-base-content/60 font-medium">
+                <div class="text-center text-xs text-primary/60 font-medium uppercase tracking-wider">
                   <%= day %>
                 </div>
               <% end %>
@@ -249,7 +257,7 @@ defmodule AuroraWeb.JournalLive.Index do
             <!-- Legend -->
             <div class="flex gap-4 mt-4 text-xs text-base-content/60">
               <div class="flex items-center gap-1">
-                <span class="w-3 h-3 rounded bg-base-200"></span>
+                <span class="w-3 h-3 rounded bg-success/20 border border-success/50"></span>
                 Has entry
               </div>
               <div class="flex items-center gap-1">
@@ -258,20 +266,16 @@ defmodule AuroraWeb.JournalLive.Index do
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- Entry Editor -->
-        <div class="lg:col-span-2 card bg-base-100 shadow-xl">
-          <div class="card-body">
+          <!-- Entry Editor -->
+          <div class="lg:col-span-2 card card-ornate corner-tl corner-tr corner-bl corner-br p-4">
             <div class="flex justify-between items-center mb-4">
-              <h2 class="card-title"><%= format_date(@current_date) %></h2>
+              <h2 class="panel-header mb-0 pb-0 border-0"><%= format_date(@current_date) %></h2>
               <%= if @selected_entry && !@editing do %>
-                <div class="flex gap-2">
-                  <button phx-click="edit_entry" class="btn btn-ghost btn-sm">
-                    <.icon name="hero-pencil" class="w-4 h-4" />
-                    Edit
-                  </button>
-                </div>
+                <button phx-click="edit_entry" class="btn btn-imperial btn-sm">
+                  <.icon name="hero-pencil" class="w-4 h-4" />
+                  Edit
+                </button>
               <% end %>
             </div>
 
@@ -282,11 +286,11 @@ defmodule AuroraWeb.JournalLive.Index do
                 <div class="grid grid-cols-2 gap-4">
                   <div class="form-control">
                     <label class="label">
-                      <span class="label-text font-semibold">Mood</span>
+                      <span class="stat-block-label">Vitality</span>
                     </label>
                     <div class="flex gap-1">
                       <%= for val <- 1..5 do %>
-                        <label class={"btn btn-sm flex-1 #{if @selected_entry && @selected_entry.mood == val, do: "btn-primary", else: "btn-outline"}"}>
+                        <label class={"btn btn-sm flex-1 btn-imperial #{if @selected_entry && @selected_entry.mood == val, do: "btn-imperial-primary"}"}>
                           <input
                             type="radio"
                             name="mood"
@@ -302,11 +306,11 @@ defmodule AuroraWeb.JournalLive.Index do
 
                   <div class="form-control">
                     <label class="label">
-                      <span class="label-text font-semibold">Energy</span>
+                      <span class="stat-block-label">Energy</span>
                     </label>
                     <div class="flex gap-1">
                       <%= for val <- 1..5 do %>
-                        <label class={"btn btn-sm flex-1 #{if @selected_entry && @selected_entry.energy == val, do: "btn-primary", else: "btn-outline"}"}>
+                        <label class={"btn btn-sm flex-1 btn-imperial #{if @selected_entry && @selected_entry.energy == val, do: "btn-imperial-primary"}"}>
                           <input
                             type="radio"
                             name="energy"
@@ -324,12 +328,12 @@ defmodule AuroraWeb.JournalLive.Index do
                 <!-- Content -->
                 <div class="form-control">
                   <label class="label">
-                    <span class="label-text font-semibold">Journal Entry</span>
+                    <span class="stat-block-label">Chronicle Entry</span>
                   </label>
                   <textarea
                     name="content"
-                    class="textarea textarea-bordered h-64 font-mono"
-                    placeholder="Write about your day..."
+                    class="textarea input-imperial h-64 font-mono"
+                    placeholder="Record the events of this day..."
                   ><%= if @selected_entry, do: @selected_entry.content, else: "" %></textarea>
                 </div>
 
@@ -339,8 +343,8 @@ defmodule AuroraWeb.JournalLive.Index do
                     <button
                       type="button"
                       phx-click="delete_entry"
-                      data-confirm="Delete this journal entry?"
-                      class="btn btn-error btn-outline"
+                      data-confirm="Delete this chronicle entry?"
+                      class="btn btn-imperial-danger"
                     >
                       Delete
                     </button>
@@ -349,11 +353,11 @@ defmodule AuroraWeb.JournalLive.Index do
                   <% end %>
                   <div class="flex gap-2">
                     <%= if @selected_entry do %>
-                      <button type="button" phx-click="cancel_edit" class="btn btn-ghost">
+                      <button type="button" phx-click="cancel_edit" class="btn btn-imperial">
                         Cancel
                       </button>
                     <% end %>
-                    <button type="submit" class="btn btn-primary">
+                    <button type="submit" class="btn btn-imperial-primary">
                       Save Entry
                     </button>
                   </div>
@@ -368,13 +372,13 @@ defmodule AuroraWeb.JournalLive.Index do
                     <%= if @selected_entry.mood do %>
                       <div class="flex items-center gap-2">
                         <span class="text-2xl"><%= Journal.mood_emoji(@selected_entry.mood) %></span>
-                        <span class="text-sm text-base-content/60"><%= Journal.mood_label(@selected_entry.mood) %></span>
+                        <span class="stat-block-label"><%= Journal.mood_label(@selected_entry.mood) %></span>
                       </div>
                     <% end %>
                     <%= if @selected_entry.energy do %>
                       <div class="flex items-center gap-2">
                         <span class="text-2xl"><%= Journal.energy_emoji(@selected_entry.energy) %></span>
-                        <span class="text-sm text-base-content/60"><%= Journal.energy_label(@selected_entry.energy) %></span>
+                        <span class="stat-block-label"><%= Journal.energy_label(@selected_entry.energy) %></span>
                       </div>
                     <% end %>
                   </div>
@@ -383,15 +387,15 @@ defmodule AuroraWeb.JournalLive.Index do
                 <!-- Content -->
                 <%= if @selected_entry.content && @selected_entry.content != "" do %>
                   <div class="prose max-w-none">
-                    <pre class="whitespace-pre-wrap font-sans text-base bg-transparent p-0"><%= @selected_entry.content %></pre>
+                    <pre class="whitespace-pre-wrap font-body text-base bg-transparent p-0 text-base-content/90"><%= @selected_entry.content %></pre>
                   </div>
                 <% else %>
-                  <p class="text-base-content/60 italic">No content written for this day.</p>
+                  <p class="text-base-content/50 italic">No content written for this day.</p>
                 <% end %>
               <% else %>
                 <div class="text-center py-12">
-                  <p class="text-base-content/60 mb-4">No entry for this day yet.</p>
-                  <button phx-click="edit_entry" class="btn btn-primary">
+                  <p class="text-base-content/50 mb-4 italic">No chronicle entry for this day.</p>
+                  <button phx-click="edit_entry" class="btn btn-imperial-primary">
                     <.icon name="hero-pencil" class="w-4 h-4" />
                     Write Entry
                   </button>
@@ -400,28 +404,26 @@ defmodule AuroraWeb.JournalLive.Index do
             <% end %>
           </div>
         </div>
-      </div>
 
-      <!-- Recent Entries List -->
-      <div class="mt-8">
-        <h2 class="text-xl font-semibold mb-4">Recent Entries</h2>
-        <div class="space-y-4">
-          <%= if Enum.empty?(@entries) do %>
-            <p class="text-base-content/60">No entries this month.</p>
-          <% else %>
-            <%= for entry <- Enum.take(@entries, 5) do %>
-              <div
-                class={"card bg-base-100 shadow-md cursor-pointer hover:shadow-lg transition-shadow #{if @selected_entry && @selected_entry.id == entry.id, do: "ring-2 ring-primary"}"}
-                phx-click="select_date"
-                phx-value-date={Date.to_iso8601(entry.entry_date)}
-              >
-                <div class="card-body p-4">
+        <!-- Recent Entries List -->
+        <div class="mt-8">
+          <h2 class="panel-header">Recent Entries</h2>
+          <div class="space-y-4">
+            <%= if Enum.empty?(@entries) do %>
+              <p class="text-base-content/50 italic">No entries this month.</p>
+            <% else %>
+              <%= for entry <- Enum.take(@entries, 5) do %>
+                <div
+                  class={"card card-ornate p-4 cursor-pointer hover:border-primary/50 transition-colors #{if @selected_entry && @selected_entry.id == entry.id, do: "border-primary"}"}
+                  phx-click="select_date"
+                  phx-value-date={Date.to_iso8601(entry.entry_date)}
+                >
                   <div class="flex justify-between items-start">
                     <div>
-                      <h3 class="font-semibold"><%= format_date(entry.entry_date) %></h3>
+                      <h3 class="font-semibold text-primary"><%= format_date(entry.entry_date) %></h3>
                       <%= if entry.content do %>
-                        <p class="text-sm text-base-content/60 mt-1 line-clamp-2">
-                          <%= String.slice(entry.content || "", 0, 150) %><%= if String.length(entry.content || "") > 150, do: "..." %>
+                        <p class="text-sm text-base-content/60 mt-1 line-clamp-2 italic">
+                          "<%= String.slice(entry.content || "", 0, 150) %><%= if String.length(entry.content || "") > 150, do: "..." %>"
                         </p>
                       <% end %>
                     </div>
@@ -435,11 +437,35 @@ defmodule AuroraWeb.JournalLive.Index do
                     </div>
                   </div>
                 </div>
-              </div>
+              <% end %>
             <% end %>
-          <% end %>
+          </div>
         </div>
-      </div>
+      </main>
+
+      <!-- HUD Navigation -->
+      <nav class="fixed bottom-0 left-0 right-0 hud-nav">
+        <.link navigate={~p"/boards"} class="hud-nav-item">
+          <.icon name="hero-view-columns" class="hud-nav-icon" />
+          <span class="hud-nav-label">Operations</span>
+        </.link>
+        <.link navigate={~p"/goals"} class="hud-nav-item">
+          <.icon name="hero-flag" class="hud-nav-icon" />
+          <span class="hud-nav-label">Quests</span>
+        </.link>
+        <.link navigate={~p"/habits"} class="hud-nav-item">
+          <.icon name="hero-bolt" class="hud-nav-icon" />
+          <span class="hud-nav-label">Rituals</span>
+        </.link>
+        <.link navigate={~p"/journal"} class="hud-nav-item hud-nav-item-active">
+          <.icon name="hero-book-open" class="hud-nav-icon" />
+          <span class="hud-nav-label">Chronicle</span>
+        </.link>
+        <.link navigate={~p"/finance"} class="hud-nav-item">
+          <.icon name="hero-banknotes" class="hud-nav-icon" />
+          <span class="hud-nav-label">Treasury</span>
+        </.link>
+      </nav>
     </div>
     """
   end

@@ -2,13 +2,12 @@ defmodule AuroraWeb.GoalLive.Index do
   use AuroraWeb, :live_view
 
   alias Aurora.Goals
-  alias Aurora.Goals.Goal
 
   @impl true
   def mount(_params, _session, socket) do
     {:ok,
      socket
-     |> assign(:page_title, "Goals")
+     |> assign(:page_title, "Quest Log")
      |> assign(:selected_timeframe, "all")
      |> assign(:selected_goal, nil)
      |> assign(:show_form, false)
@@ -90,7 +89,7 @@ defmodule AuroraWeb.GoalLive.Index do
 
     case result do
       {:ok, _goal} ->
-        action = if socket.assigns.editing_goal, do: "updated", else: "created"
+        action = if socket.assigns.editing_goal, do: "updated", else: "accepted"
 
         {:noreply,
          socket
@@ -98,10 +97,10 @@ defmodule AuroraWeb.GoalLive.Index do
          |> assign(:editing_goal, nil)
          |> assign(:parent_goal, nil)
          |> load_goals()
-         |> put_flash(:info, "Goal #{action}!")}
+         |> put_flash(:info, "Quest #{action}!")}
 
       {:error, _changeset} ->
-        {:noreply, put_flash(socket, :error, "Failed to save goal")}
+        {:noreply, put_flash(socket, :error, "Failed to save quest")}
     end
   end
 
@@ -113,10 +112,10 @@ defmodule AuroraWeb.GoalLive.Index do
         {:noreply,
          socket
          |> load_goals()
-         |> put_flash(:info, "Goal deleted")}
+         |> put_flash(:info, "Quest abandoned")}
 
       {:error, _} ->
-        {:noreply, put_flash(socket, :error, "Failed to delete goal")}
+        {:noreply, put_flash(socket, :error, "Failed to delete quest")}
     end
   end
 
@@ -137,89 +136,89 @@ defmodule AuroraWeb.GoalLive.Index do
     {:noreply, assign(socket, :selected_timeframe, timeframe)}
   end
 
-  defp progress_color(progress) when progress >= 80, do: "progress-success"
-  defp progress_color(progress) when progress >= 50, do: "progress-info"
-  defp progress_color(progress) when progress >= 25, do: "progress-warning"
-  defp progress_color(_), do: "progress-error"
-
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="container mx-auto px-4 py-8">
+    <div class="min-h-screen bg-base-300">
       <!-- Header -->
-      <div class="flex justify-between items-center mb-8">
-        <div class="flex items-center gap-4">
-          <.link navigate={~p"/"} class="btn btn-ghost btn-sm">
-            <.icon name="hero-arrow-left" class="w-4 h-4" />
-          </.link>
-          <h1 class="text-3xl font-bold">Goals</h1>
-        </div>
-        <button phx-click="show_form" class="btn btn-primary">
-          <.icon name="hero-plus" class="w-4 h-4" />
-          New Goal
-        </button>
-      </div>
-
-      <!-- Timeframe Filter Tabs -->
-      <div class="tabs tabs-boxed mb-6">
-        <a
-          phx-click="filter_timeframe"
-          phx-value-timeframe="all"
-          class={"tab #{if @selected_timeframe == "all", do: "tab-active"}"}
-        >
-          All
-        </a>
-        <%= for {label, value} <- Goals.timeframes() do %>
-          <a
-            phx-click="filter_timeframe"
-            phx-value-timeframe={value}
-            class={"tab #{if @selected_timeframe == value, do: "tab-active"}"}
-          >
-            <%= label %>
-          </a>
-        <% end %>
-      </div>
-
-      <!-- Goals by Timeframe -->
-      <%= if Enum.empty?(@goals) do %>
-        <div class="card bg-base-100 shadow-xl">
-          <div class="card-body text-center">
-            <p class="text-base-content/60">No goals yet. Create your first goal to start tracking!</p>
+      <header class="border-b border-primary/30 bg-base-200">
+        <div class="container mx-auto px-4 py-4">
+          <div class="flex justify-between items-center">
+            <div class="flex items-center gap-4">
+              <.link navigate={~p"/"} class="btn btn-ghost btn-sm text-primary">
+                <.icon name="hero-arrow-left" class="w-4 h-4" />
+              </.link>
+              <div class="flex items-center gap-3">
+                <.icon name="hero-flag" class="w-6 h-6 text-primary" />
+                <h1 class="text-2xl tracking-wider text-primary">Quest Log</h1>
+              </div>
+            </div>
+            <button phx-click="show_form" class="btn btn-imperial-primary btn-sm">
+              <.icon name="hero-plus" class="w-4 h-4" />
+              New Quest
+            </button>
           </div>
         </div>
-      <% else %>
-        <div class="space-y-8">
-          <%= for {timeframe, goals} <- filter_grouped_goals(@grouped_goals, @selected_timeframe) do %>
-            <div class="card bg-base-100 shadow-lg">
-              <div class="card-body">
+      </header>
+
+      <main class="container mx-auto px-4 py-6 pb-24">
+        <!-- Timeframe Filter Tabs -->
+        <div class="flex flex-wrap gap-2 mb-6">
+          <button
+            phx-click="filter_timeframe"
+            phx-value-timeframe="all"
+            class={"btn btn-sm btn-imperial #{if @selected_timeframe == "all", do: "btn-imperial-primary"}"}
+          >
+            All
+          </button>
+          <%= for {label, value} <- Goals.timeframes() do %>
+            <button
+              phx-click="filter_timeframe"
+              phx-value-timeframe={value}
+              class={"btn btn-sm btn-imperial #{if @selected_timeframe == value, do: "btn-imperial-primary"}"}
+            >
+              <%= label %>
+            </button>
+          <% end %>
+        </div>
+
+        <!-- Goals by Timeframe -->
+        <%= if Enum.empty?(@goals) do %>
+          <div class="card card-ornate corner-tl corner-tr corner-bl corner-br p-8 text-center">
+            <p class="text-base-content/50 italic">No quests in your log. Begin your journey by accepting a quest.</p>
+          </div>
+        <% else %>
+          <div class="space-y-6">
+            <%= for {timeframe, goals} <- filter_grouped_goals(@grouped_goals, @selected_timeframe) do %>
+              <div class="card card-ornate corner-tl corner-tr corner-bl corner-br p-4">
                 <div class="flex justify-between items-center mb-4">
-                  <h2 class="card-title text-xl">
+                  <h2 class="panel-header mb-0 pb-0 border-0 flex items-center gap-2">
                     <.icon name={timeframe_icon(timeframe)} class="w-5 h-5" />
-                    <%= Goals.timeframe_label(timeframe) %> Goals
-                    <span class="badge badge-neutral"><%= length(goals) %></span>
+                    <%= Goals.timeframe_label(timeframe) %> Quests
+                    <span class="badge-imperial ml-2"><%= length(goals) %></span>
                   </h2>
                 </div>
 
                 <div class="space-y-4">
                   <%= for goal <- goals do %>
-                    <.goal_card goal={goal} level={0} myself={@myself} />
+                    <.goal_card goal={goal} level={0} />
                   <% end %>
                 </div>
               </div>
-            </div>
-          <% end %>
-        </div>
-      <% end %>
+            <% end %>
+          </div>
+        <% end %>
+      </main>
 
       <!-- Goal Form Modal -->
       <%= if @show_form do %>
         <div class="modal modal-open">
-          <div class="modal-box max-w-lg">
+          <div class="modal-box card-ornate border border-primary/50 max-w-lg">
             <div class="flex justify-between items-center mb-4">
-              <h3 class="font-bold text-lg">
-                <%= if @editing_goal, do: "Edit Goal", else: "New Goal" %>
+              <h3 class="panel-header mb-0 pb-0 border-0">
+                <%= if @editing_goal, do: "Edit Quest", else: "Accept New Quest" %>
               </h3>
-              <button phx-click="close_form" class="btn btn-ghost btn-sm btn-circle">
+              <button phx-click="close_form" class="btn btn-ghost btn-sm text-primary">
                 <.icon name="hero-x-mark" class="w-5 h-5" />
               </button>
             </div>
@@ -227,32 +226,32 @@ defmodule AuroraWeb.GoalLive.Index do
             <form phx-submit="save_goal" class="space-y-4">
               <!-- Title -->
               <div class="form-control">
-                <label class="label"><span class="label-text font-semibold">Title</span></label>
+                <label class="label"><span class="stat-block-label">Quest Title</span></label>
                 <input
                   type="text"
                   name="title"
                   value={if @editing_goal, do: @editing_goal.title, else: ""}
-                  class="input input-bordered"
-                  placeholder="What do you want to achieve?"
+                  class="input input-imperial"
+                  placeholder="What do you seek to achieve?"
                   required
                 />
               </div>
 
               <!-- Description -->
               <div class="form-control">
-                <label class="label"><span class="label-text font-semibold">Description</span></label>
+                <label class="label"><span class="stat-block-label">Description</span></label>
                 <textarea
                   name="description"
-                  class="textarea textarea-bordered h-20"
-                  placeholder="Why is this goal important?"
+                  class="textarea input-imperial h-20"
+                  placeholder="Why is this quest important?"
                 ><%= if @editing_goal, do: @editing_goal.description, else: "" %></textarea>
               </div>
 
               <!-- Timeframe & Category -->
               <div class="grid grid-cols-2 gap-4">
                 <div class="form-control">
-                  <label class="label"><span class="label-text font-semibold">Timeframe</span></label>
-                  <select name="timeframe" class="select select-bordered">
+                  <label class="label"><span class="stat-block-label">Timeframe</span></label>
+                  <select name="timeframe" class="select input-imperial">
                     <%= for {label, value} <- Goals.timeframes() do %>
                       <option
                         value={value}
@@ -265,8 +264,8 @@ defmodule AuroraWeb.GoalLive.Index do
                 </div>
 
                 <div class="form-control">
-                  <label class="label"><span class="label-text font-semibold">Category</span></label>
-                  <select name="category" class="select select-bordered">
+                  <label class="label"><span class="stat-block-label">Category</span></label>
+                  <select name="category" class="select input-imperial">
                     <option value="">None</option>
                     <%= for {label, value} <- Goals.categories() do %>
                       <option
@@ -282,9 +281,9 @@ defmodule AuroraWeb.GoalLive.Index do
 
               <!-- Parent Goal -->
               <div class="form-control">
-                <label class="label"><span class="label-text font-semibold">Parent Goal (optional)</span></label>
-                <select name="parent_id" class="select select-bordered">
-                  <option value="">None - Top Level Goal</option>
+                <label class="label"><span class="stat-block-label">Parent Quest (optional)</span></label>
+                <select name="parent_id" class="select input-imperial">
+                  <option value="">None - Main Quest</option>
                   <%= for potential_parent <- Goals.get_potential_parents(@editing_goal) do %>
                     <option
                       value={potential_parent.id}
@@ -299,113 +298,140 @@ defmodule AuroraWeb.GoalLive.Index do
               <!-- Progress -->
               <div class="form-control">
                 <label class="label">
-                  <span class="label-text font-semibold">Progress</span>
-                  <span class="label-text-alt"><%= if @editing_goal, do: @editing_goal.progress, else: 0 %>%</span>
+                  <span class="stat-block-label">Progress</span>
+                  <span class="text-primary font-mono"><%= if @editing_goal, do: @editing_goal.progress, else: 0 %>%</span>
                 </label>
+                <div class="progress-rpg h-6 relative">
+                  <div
+                    class={"progress-rpg-fill #{if (@editing_goal && @editing_goal.progress >= 100) || false, do: "fill-success"}"}
+                    style={"width: #{if @editing_goal, do: @editing_goal.progress, else: 0}%"}
+                  ></div>
+                </div>
                 <input
                   type="range"
                   name="progress"
                   min="0"
                   max="100"
                   value={if @editing_goal, do: @editing_goal.progress, else: 0}
-                  class="range range-primary"
+                  class="range range-primary range-sm mt-2"
                 />
-                <div class="w-full flex justify-between text-xs px-2 mt-1">
-                  <span>0%</span>
-                  <span>25%</span>
-                  <span>50%</span>
-                  <span>75%</span>
-                  <span>100%</span>
-                </div>
               </div>
 
               <!-- Actions -->
-              <div class="modal-action">
+              <div class="flex justify-between pt-4">
                 <%= if @editing_goal do %>
                   <button
                     type="button"
                     phx-click="delete_goal"
                     phx-value-id={@editing_goal.id}
-                    data-confirm="Delete this goal and all its sub-goals?"
-                    class="btn btn-error btn-outline mr-auto"
+                    data-confirm="Abandon this quest and all sub-quests?"
+                    class="btn btn-imperial-danger"
                   >
-                    Delete
+                    Abandon
                   </button>
+                <% else %>
+                  <div></div>
                 <% end %>
-                <button type="button" phx-click="close_form" class="btn btn-ghost">Cancel</button>
-                <button type="submit" class="btn btn-primary">
-                  <%= if @editing_goal, do: "Save", else: "Create" %>
-                </button>
+                <div class="flex gap-2">
+                  <button type="button" phx-click="close_form" class="btn btn-imperial">Cancel</button>
+                  <button type="submit" class="btn btn-imperial-primary">
+                    <%= if @editing_goal, do: "Save", else: "Accept Quest" %>
+                  </button>
+                </div>
               </div>
             </form>
           </div>
-          <div class="modal-backdrop" phx-click="close_form"></div>
+          <div class="modal-backdrop bg-base-300/80" phx-click="close_form"></div>
         </div>
       <% end %>
+
+      <!-- HUD Navigation -->
+      <nav class="fixed bottom-0 left-0 right-0 hud-nav">
+        <.link navigate={~p"/boards"} class="hud-nav-item">
+          <.icon name="hero-view-columns" class="hud-nav-icon" />
+          <span class="hud-nav-label">Operations</span>
+        </.link>
+        <.link navigate={~p"/goals"} class="hud-nav-item hud-nav-item-active">
+          <.icon name="hero-flag" class="hud-nav-icon" />
+          <span class="hud-nav-label">Quests</span>
+        </.link>
+        <.link navigate={~p"/habits"} class="hud-nav-item">
+          <.icon name="hero-bolt" class="hud-nav-icon" />
+          <span class="hud-nav-label">Rituals</span>
+        </.link>
+        <.link navigate={~p"/journal"} class="hud-nav-item">
+          <.icon name="hero-book-open" class="hud-nav-icon" />
+          <span class="hud-nav-label">Chronicle</span>
+        </.link>
+        <.link navigate={~p"/finance"} class="hud-nav-item">
+          <.icon name="hero-banknotes" class="hud-nav-icon" />
+          <span class="hud-nav-label">Treasury</span>
+        </.link>
+      </nav>
     </div>
     """
   end
 
   defp goal_card(assigns) do
     ~H"""
-    <div class={"border-l-4 pl-4 #{if @level > 0, do: "ml-6 border-base-300", else: "border-primary"}"}>
-      <div class="flex items-start gap-4">
-        <!-- Progress Circle -->
-        <div class="radial-progress text-primary" style={"--value:#{@goal.progress}; --size:3rem; --thickness:4px;"} role="progressbar">
-          <span class="text-xs font-bold"><%= @goal.progress %>%</span>
-        </div>
+    <div class={"quest-item #{if @goal.progress >= 100, do: "quest-item-complete", else: "quest-item-active"} #{if @level > 0, do: "ml-6"}"}>
+      <!-- Quest Diamond -->
+      <div class={"quest-diamond #{if @goal.progress >= 100, do: "quest-diamond-filled text-success", else: "text-primary"}"}></div>
 
-        <!-- Goal Content -->
-        <div class="flex-1 min-w-0">
-          <div class="flex items-center gap-2 flex-wrap">
-            <h3 class="font-semibold text-lg"><%= @goal.title %></h3>
-            <%= if @goal.category do %>
-              <span class={"badge badge-sm #{Goals.category_color(@goal.category)} text-white"}>
-                <%= Goals.category_label(@goal.category) %>
-              </span>
-            <% end %>
-          </div>
-
-          <%= if @goal.description do %>
-            <p class="text-sm text-base-content/60 mt-1"><%= @goal.description %></p>
+      <!-- Goal Content -->
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2 flex-wrap">
+          <h3 class="font-semibold"><%= @goal.title %></h3>
+          <%= if @goal.category do %>
+            <span class="badge-imperial text-xs">
+              <%= Goals.category_label(@goal.category) %>
+            </span>
           <% end %>
-
-          <!-- Progress Bar -->
-          <div class="mt-2">
-            <progress class={"progress w-full #{progress_color(@goal.progress)}"} value={@goal.progress} max="100"></progress>
-          </div>
         </div>
 
-        <!-- Actions -->
-        <div class="flex gap-1">
-          <button
-            phx-click="show_form"
-            phx-value-parent_id={@goal.id}
-            class="btn btn-ghost btn-sm btn-square"
-            title="Add sub-goal"
-          >
-            <.icon name="hero-plus" class="w-4 h-4" />
-          </button>
-          <button
-            phx-click="edit_goal"
-            phx-value-id={@goal.id}
-            class="btn btn-ghost btn-sm btn-square"
-            title="Edit"
-          >
-            <.icon name="hero-pencil" class="w-4 h-4" />
-          </button>
+        <%= if @goal.description do %>
+          <p class="text-sm text-base-content/60 mt-1"><%= @goal.description %></p>
+        <% end %>
+
+        <!-- Progress Bar -->
+        <div class="progress-rpg h-2 mt-2">
+          <div
+            class={"progress-rpg-fill #{if @goal.progress >= 100, do: "fill-success"}"}
+            style={"width: #{@goal.progress}%"}
+          ></div>
         </div>
       </div>
 
-      <!-- Children -->
-      <%= if @goal.children && @goal.children != [] do %>
-        <div class="mt-3 space-y-3">
-          <%= for child <- @goal.children do %>
-            <.goal_card goal={child} level={@level + 1} myself={@myself} />
-          <% end %>
-        </div>
-      <% end %>
+      <!-- Progress & Actions -->
+      <div class="flex items-center gap-2">
+        <span class="font-mono text-primary text-sm"><%= @goal.progress %>%</span>
+        <button
+          phx-click="show_form"
+          phx-value-parent_id={@goal.id}
+          class="btn btn-ghost btn-sm text-primary"
+          title="Add sub-quest"
+        >
+          <.icon name="hero-plus" class="w-4 h-4" />
+        </button>
+        <button
+          phx-click="edit_goal"
+          phx-value-id={@goal.id}
+          class="btn btn-ghost btn-sm text-primary"
+          title="Edit"
+        >
+          <.icon name="hero-pencil" class="w-4 h-4" />
+        </button>
+      </div>
     </div>
+
+    <!-- Children -->
+    <%= if @goal.children && @goal.children != [] do %>
+      <div class="space-y-2 mt-2">
+        <%= for child <- @goal.children do %>
+          <.goal_card goal={child} level={@level + 1} />
+        <% end %>
+      </div>
+    <% end %>
     """
   end
 
