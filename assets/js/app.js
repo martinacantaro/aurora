@@ -37,8 +37,7 @@ const Hooks = {
         animation: 150,
         ghostClass: "opacity-50",
         dragClass: "shadow-lg",
-        handle: group === "columns" ? ".card-body" : undefined,
-        draggable: group === "columns" ? "[data-id]" : ".card",
+        draggable: "[data-id]",
         onEnd: (evt) => {
           // Only handle on the source element to avoid duplicate events
           if (this.el !== evt.from) return
