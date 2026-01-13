@@ -5,6 +5,7 @@ defmodule AuroraWeb.DashboardLive.Index do
   alias Aurora.Habits
   alias Aurora.Goals
   alias Aurora.Journal
+  alias Aurora.Finance
 
   @impl true
   def mount(_params, _session, socket) do
@@ -13,6 +14,7 @@ defmodule AuroraWeb.DashboardLive.Index do
     goals = Goals.list_goals()
     today_entry = Journal.get_entry_for_date(Date.utc_today())
     recent_entries = Journal.recent_entries(7)
+    finance_summary = Finance.get_current_month_summary()
 
     {:ok,
      socket
@@ -21,7 +23,8 @@ defmodule AuroraWeb.DashboardLive.Index do
      |> assign(:habits, habits_with_status)
      |> assign(:goals, goals)
      |> assign(:today_entry, today_entry)
-     |> assign(:recent_entries, recent_entries)}
+     |> assign(:recent_entries, recent_entries)
+     |> assign(:finance_summary, finance_summary)}
   end
 
   @impl true
@@ -126,6 +129,39 @@ defmodule AuroraWeb.DashboardLive.Index do
             </div>
             <div class="card-actions justify-end mt-4">
               <.link navigate={~p"/goals"} class="btn btn-primary btn-sm">
+                View All
+              </.link>
+            </div>
+          </div>
+        </div>
+
+        <!-- Finance Widget -->
+        <div class="card bg-base-100 shadow-xl">
+          <div class="card-body">
+            <h2 class="card-title">
+              <.icon name="hero-banknotes" class="w-5 h-5" />
+              Finance
+              <span class="text-xs font-normal text-base-content/60">This Month</span>
+            </h2>
+            <div class="space-y-2">
+              <div class="flex justify-between">
+                <span class="text-sm">Income</span>
+                <span class="text-success font-mono">+$<%= Decimal.round(@finance_summary.income, 2) %></span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-sm">Expenses</span>
+                <span class="text-error font-mono">-$<%= Decimal.round(@finance_summary.expenses, 2) %></span>
+              </div>
+              <div class="divider my-1"></div>
+              <div class="flex justify-between font-semibold">
+                <span>Balance</span>
+                <span class={"font-mono #{if Decimal.compare(@finance_summary.balance, Decimal.new(0)) == :lt, do: "text-error", else: "text-success"}"}>
+                  <%= if Decimal.compare(@finance_summary.balance, Decimal.new(0)) == :lt, do: "-" %>$<%= Decimal.round(Decimal.abs(@finance_summary.balance), 2) %>
+                </span>
+              </div>
+            </div>
+            <div class="card-actions justify-end mt-4">
+              <.link navigate={~p"/finance"} class="btn btn-primary btn-sm">
                 View All
               </.link>
             </div>

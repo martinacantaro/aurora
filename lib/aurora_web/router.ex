@@ -39,6 +39,7 @@ defmodule AuroraWeb.Router do
     live "/habits", HabitLive.Index, :index
     live "/goals", GoalLive.Index, :index
     live "/journal", JournalLive.Index, :index
+    live "/finance", FinanceLive.Index, :index
   end
 
   # Other scopes may use custom stacks.
