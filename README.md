@@ -52,19 +52,38 @@ A personal productivity dashboard built with Elixir, Phoenix LiveView, and Daisy
    cd aurora
    ```
 
-2. Install dependencies:
+2. Install dependencies and set up the database:
    ```bash
-   mix setup
+   make setup
    ```
 
 3. Configure your database in `config/dev.exs` if needed (defaults to your system username)
 
-4. Start the server:
+4. Create a `.env` file for your environment variables (this file is gitignored):
    ```bash
-   mix phx.server
+   echo 'export ANTHROPIC_API_KEY=your-key-here' > .env
    ```
 
-5. Visit [localhost:4000](http://localhost:4000)
+5. Start the server:
+   ```bash
+   make server
+   ```
+
+6. Visit [localhost:4001](http://localhost:4001)
+
+### Make Commands
+
+The Makefile automatically loads your `.env` file. Available commands:
+
+| Command | Description |
+|---------|-------------|
+| `make server` | Start the Phoenix server on port 4001 |
+| `make console` | Start server with interactive IEx shell |
+| `make deps` | Install dependencies |
+| `make setup` | Full setup (deps + database) |
+| `make db.migrate` | Run database migrations |
+| `make db.reset` | Reset the database |
+| `make test` | Run tests |
 
 ### Default Login
 
