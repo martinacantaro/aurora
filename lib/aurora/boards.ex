@@ -6,6 +6,8 @@ defmodule Aurora.Boards do
   import Ecto.Query, warn: false
   alias Aurora.Repo
   alias Aurora.Boards.{Board, Column, Task, Label}
+  alias Aurora.Calendar
+  alias Aurora.Calendar.Event
 
   # ============================================================================
   # Boards
@@ -104,7 +106,7 @@ defmodule Aurora.Boards do
   def get_task!(id) do
     Task
     |> Repo.get!(id)
-    |> Repo.preload(:labels)
+    |> Repo.preload([:labels, :event])
   end
 
   def create_task(attrs \\ %{}) do
@@ -158,6 +160,104 @@ defmodule Aurora.Boards do
         |> Repo.update_all(set: [position: index])
       end)
     end)
+  end
+
+  # ============================================================================
+  # Task Scheduling
+  # ============================================================================
+
+  @doc """
+  Schedule a task by creating/updating a linked calendar event.
+  """
+  def schedule_task(task_id, start_at, end_at \\ nil) do
+    task = get_task!(task_id)
+
+    end_at = end_at || DateTime.add(start_at, 3600, :second)
+
+    Repo.transaction(fn ->
+      event_attrs = %{
+        title: task.title,
+        start_at: start_at,
+        end_at: end_at,
+        task_id: task.id,
+        color: "#c9a227"
+      }
+
+      case task.event do
+        nil ->
+          {:ok, event} = Calendar.create_event(event_attrs)
+          update_task(task, %{event_id: event.id})
+
+        existing_event ->
+          Calendar.update_event(existing_event, %{start_at: start_at, end_at: end_at})
+      end
+
+      get_task!(task_id)
+    end)
+  end
+
+  @doc """
+  Unschedule a task by removing the event link and deleting the event.
+  """
+  def unschedule_task(task_id) do
+    task = get_task!(task_id)
+
+    Repo.transaction(fn ->
+      if task.event do
+        update_task(task, %{event_id: nil})
+        Calendar.delete_event(task.event)
+      end
+
+      get_task!(task_id)
+    end)
+  end
+
+  @doc """
+  List unscheduled tasks for a board (tasks without linked events).
+  """
+  def list_unscheduled_tasks(board_id) do
+    from(t in Task,
+      join: c in Column,
+      on: t.column_id == c.id,
+      where: c.board_id == ^board_id and is_nil(t.event_id),
+      order_by: [asc: t.position],
+      preload: [:labels, :event, :column]
+    )
+    |> Repo.all()
+  end
+
+  @doc """
+  List scheduled tasks for a board within a date range.
+  """
+  def list_scheduled_tasks_for_range(board_id, start_date, end_date) do
+    start_dt = DateTime.new!(start_date, ~T[00:00:00], "Etc/UTC")
+    end_dt = DateTime.new!(end_date, ~T[23:59:59], "Etc/UTC")
+
+    from(t in Task,
+      join: c in Column,
+      on: t.column_id == c.id,
+      join: e in Event,
+      on: t.event_id == e.id,
+      where: c.board_id == ^board_id,
+      where: e.start_at >= ^start_dt and e.start_at <= ^end_dt,
+      order_by: [asc: e.start_at],
+      preload: [:labels, :event, :column]
+    )
+    |> Repo.all()
+  end
+
+  @doc """
+  Get all tasks for a board with their scheduling info.
+  """
+  def list_all_tasks_for_board(board_id) do
+    from(t in Task,
+      join: c in Column,
+      on: t.column_id == c.id,
+      where: c.board_id == ^board_id,
+      order_by: [asc: t.position],
+      preload: [:labels, :event, :column]
+    )
+    |> Repo.all()
   end
 
   # ============================================================================

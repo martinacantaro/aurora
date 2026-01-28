@@ -7,6 +7,7 @@ defmodule AuroraWeb.BoardLive.Show do
   def mount(%{"id" => id}, _session, socket) do
     board = Boards.get_board!(id)
     labels = Boards.list_labels()
+    today = Date.utc_today()
 
     {:ok,
      socket
@@ -18,6 +19,7 @@ defmodule AuroraWeb.BoardLive.Show do
      |> assign(:editing_task, nil)
      |> assign(:new_task_column_id, nil)
      |> assign(:selected_task, nil)
+     |> assign(:modal_priority, 4)
      |> assign(:show_labels_menu, false)
      # Filters
      |> assign(:search_query, "")
@@ -26,7 +28,32 @@ defmodule AuroraWeb.BoardLive.Show do
      |> assign(:filter_due_date, nil)
      |> assign(:show_filter_labels, false)
      |> assign(:show_filter_priority, false)
-     |> assign(:show_filter_due, false)}
+     |> assign(:show_filter_due, false)
+     # View mode
+     |> assign(:view_mode, :kanban)
+     |> assign(:current_week_start, week_start(today))
+     |> assign(:current_month, {today.year, today.month})
+     |> assign(:selected_day, today)
+     |> load_scheduling_data()}
+  end
+
+  defp week_start(date) do
+    day_of_week = Date.day_of_week(date)
+    Date.add(date, -(day_of_week - 1))
+  end
+
+  defp load_scheduling_data(socket) do
+    board_id = socket.assigns.board.id
+    week_start = socket.assigns.current_week_start
+    week_end = Date.add(week_start, 6)
+    {year, month} = socket.assigns.current_month
+    month_start = Date.new!(year, month, 1)
+    month_end = Date.end_of_month(month_start)
+
+    socket
+    |> assign(:unscheduled_tasks, Boards.list_unscheduled_tasks(board_id))
+    |> assign(:weekly_tasks, Boards.list_scheduled_tasks_for_range(board_id, week_start, week_end))
+    |> assign(:monthly_tasks, Boards.list_scheduled_tasks_for_range(board_id, month_start, month_end))
   end
 
   # Priority colors
@@ -196,13 +223,23 @@ defmodule AuroraWeb.BoardLive.Show do
   defp reload_board(socket) do
     board = Boards.get_board!(socket.assigns.board.id)
     labels = Boards.list_labels()
-    assign(socket, board: board, columns: board.columns, labels: labels)
+
+    socket
+    |> assign(board: board, columns: board.columns, labels: labels)
+    |> load_scheduling_data()
   end
 
   # Task modal events
   def handle_event("open_task", %{"id" => id}, socket) do
     task = Boards.get_task!(id)
-    {:noreply, assign(socket, :selected_task, task)}
+    {:noreply,
+     socket
+     |> assign(:selected_task, task)
+     |> assign(:modal_priority, task.priority)}
+  end
+
+  def handle_event("set_modal_priority", %{"priority" => priority}, socket) do
+    {:noreply, assign(socket, :modal_priority, String.to_integer(priority))}
   end
 
   def handle_event("close_task_modal", _params, socket) do
@@ -220,7 +257,7 @@ defmodule AuroraWeb.BoardLive.Show do
     }
 
     case Boards.update_task(task, task_params) do
-      {:ok, _task} ->
+      {:ok, updated_task} ->
         # Update labels if provided
         if params["label_ids"] do
           label_ids = params["label_ids"]
@@ -228,6 +265,36 @@ defmodule AuroraWeb.BoardLive.Show do
             |> Enum.map(&String.to_integer/1)
             |> Enum.reject(&(&1 == 0))
           Boards.set_task_labels(task.id, label_ids)
+        end
+
+        # Handle scheduling
+        schedule_date = params["schedule_date"]
+        schedule_start = params["schedule_start_time"]
+        schedule_end = params["schedule_end_time"]
+
+        cond do
+          schedule_date != "" and schedule_start != "" ->
+            # Schedule or update the task
+            {:ok, date} = Date.from_iso8601(schedule_date)
+            {:ok, start_time} = Time.from_iso8601(schedule_start <> ":00")
+            start_at = DateTime.new!(date, start_time, "Etc/UTC")
+
+            end_at =
+              if schedule_end != "" do
+                {:ok, end_time} = Time.from_iso8601(schedule_end <> ":00")
+                DateTime.new!(date, end_time, "Etc/UTC")
+              else
+                DateTime.add(start_at, 3600, :second)
+              end
+
+            Boards.schedule_task(updated_task.id, start_at, end_at)
+
+          schedule_date == "" and task.event_id != nil ->
+            # Clear scheduling if date was cleared but task was scheduled
+            Boards.unschedule_task(task.id)
+
+          true ->
+            :ok
         end
 
         {:noreply,
@@ -366,6 +433,78 @@ defmodule AuroraWeb.BoardLive.Show do
      |> assign(:filter_due_date, nil)}
   end
 
+  # View mode events
+  def handle_event("set_view_mode", %{"mode" => mode}, socket) do
+    mode = String.to_existing_atom(mode)
+    {:noreply, assign(socket, :view_mode, mode)}
+  end
+
+  def handle_event("prev_week", _params, socket) do
+    new_start = Date.add(socket.assigns.current_week_start, -7)
+    {:noreply, socket |> assign(:current_week_start, new_start) |> load_scheduling_data()}
+  end
+
+  def handle_event("next_week", _params, socket) do
+    new_start = Date.add(socket.assigns.current_week_start, 7)
+    {:noreply, socket |> assign(:current_week_start, new_start) |> load_scheduling_data()}
+  end
+
+  def handle_event("today_week", _params, socket) do
+    today = Date.utc_today()
+    {:noreply, socket |> assign(:current_week_start, week_start(today)) |> load_scheduling_data()}
+  end
+
+  def handle_event("prev_month", _params, socket) do
+    {year, month} = socket.assigns.current_month
+    {new_year, new_month} = if month == 1, do: {year - 1, 12}, else: {year, month - 1}
+    {:noreply, socket |> assign(:current_month, {new_year, new_month}) |> load_scheduling_data()}
+  end
+
+  def handle_event("next_month", _params, socket) do
+    {year, month} = socket.assigns.current_month
+    {new_year, new_month} = if month == 12, do: {year + 1, 1}, else: {year, month + 1}
+    {:noreply, socket |> assign(:current_month, {new_year, new_month}) |> load_scheduling_data()}
+  end
+
+  def handle_event("select_day", %{"date" => date_str}, socket) do
+    {:ok, date} = Date.from_iso8601(date_str)
+    {:noreply, assign(socket, :selected_day, date)}
+  end
+
+  def handle_event("schedule_task", %{"task_id" => task_id, "date" => date_str, "hour" => hour}, socket) do
+    {:ok, date} = Date.from_iso8601(date_str)
+    hour = String.to_integer(hour)
+    start_at = DateTime.new!(date, Time.new!(hour, 0, 0), "Etc/UTC")
+
+    case Boards.schedule_task(String.to_integer(task_id), start_at) do
+      {:ok, _task} ->
+        {:noreply, reload_board(socket)}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, "Failed to schedule task")}
+    end
+  end
+
+  def handle_event("unschedule_task", %{"task_id" => task_id}, socket) do
+    task_id = String.to_integer(task_id)
+
+    case Boards.unschedule_task(task_id) do
+      {:ok, updated_task} ->
+        # Refresh selected_task if it's the one being unscheduled
+        socket =
+          if socket.assigns.selected_task && socket.assigns.selected_task.id == task_id do
+            assign(socket, :selected_task, updated_task)
+          else
+            socket
+          end
+
+        {:noreply, reload_board(socket)}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, "Failed to unschedule task")}
+    end
+  end
+
   # Filter helper functions
   defp filter_tasks(tasks, assigns) do
     tasks
@@ -430,6 +569,325 @@ defmodule AuroraWeb.BoardLive.Show do
       assigns.filter_due_date != nil
   end
 
+  # Weekly View Component
+  defp weekly_view(assigns) do
+    week_days = for i <- 0..6, do: Date.add(assigns.current_week_start, i)
+    hours = for h <- 6..22, do: h
+    today = Date.utc_today()
+
+    assigns =
+      assigns
+      |> assign(:week_days, week_days)
+      |> assign(:hours, hours)
+      |> assign(:today, today)
+
+    ~H"""
+    <div class="flex-1 flex bg-base-300 overflow-hidden">
+      <!-- Unscheduled Tasks Sidebar -->
+      <div class="w-64 bg-base-200 border-r border-primary/20 flex flex-col">
+        <div class="p-3 border-b border-primary/20 bg-base-100">
+          <h3 class="font-semibold text-primary tracking-wide">Unscheduled</h3>
+          <p class="text-xs text-base-content/60 mt-1">Drag to schedule</p>
+        </div>
+        <div
+          class="flex-1 overflow-y-auto p-2 space-y-2"
+          id="unscheduled-tasks"
+          phx-hook="Sortable"
+          data-group="schedule"
+        >
+          <%= for task <- @unscheduled_tasks do %>
+            <div
+              class="bg-base-100 border border-primary/10 rounded p-2 cursor-move hover:border-primary/40 transition-colors text-sm"
+              id={"unscheduled-task-#{task.id}"}
+              data-id={task.id}
+              data-task-id={task.id}
+            >
+              <div class="flex items-center gap-2">
+                <span class={"font-bold text-xs #{priority_color(task.priority)}"}>
+                  <%= priority_label(task.priority) %>
+                </span>
+                <span class="truncate"><%= task.title %></span>
+              </div>
+              <%= if task.column do %>
+                <div class="text-xs text-base-content/50 mt-1"><%= task.column.name %></div>
+              <% end %>
+            </div>
+          <% end %>
+          <%= if Enum.empty?(@unscheduled_tasks) do %>
+            <p class="text-sm text-base-content/60 italic p-2">All tasks scheduled</p>
+          <% end %>
+        </div>
+      </div>
+
+      <!-- Week Grid -->
+      <div class="flex-1 flex flex-col overflow-hidden">
+        <!-- Week Navigation -->
+        <div class="p-3 border-b border-primary/20 bg-base-200 flex items-center justify-between">
+          <button phx-click="prev_week" class="btn btn-imperial btn-sm">
+            <.icon name="hero-chevron-left" class="w-4 h-4" />
+          </button>
+          <div class="flex items-center gap-4">
+            <span class="font-semibold text-primary">
+              <%= Calendar.strftime(@current_week_start, "%b %d") %> - <%= Calendar.strftime(Date.add(@current_week_start, 6), "%b %d, %Y") %>
+            </span>
+            <button phx-click="today_week" class="btn btn-imperial btn-xs">Today</button>
+          </div>
+          <button phx-click="next_week" class="btn btn-imperial btn-sm">
+            <.icon name="hero-chevron-right" class="w-4 h-4" />
+          </button>
+        </div>
+
+        <!-- Day Headers -->
+        <div class="flex border-b border-primary/20 bg-base-100">
+          <!-- Spacer for time label column -->
+          <div class="w-16 flex-shrink-0"></div>
+          <!-- Day columns -->
+          <div class="flex-1 grid grid-cols-7">
+            <%= for day <- @week_days do %>
+              <div class={"p-2 text-center border-r border-primary/10 last:border-r-0 #{if day == @today, do: "bg-primary/10"}"}>
+                <div class="text-xs text-base-content/60"><%= Calendar.strftime(day, "%a") %></div>
+                <div class={"text-lg font-semibold #{if day == @today, do: "text-primary", else: "text-base-content"}"}>
+                  <%= day.day %>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+
+        <!-- Time Grid -->
+        <div class="flex-1 overflow-y-auto">
+          <div class="relative">
+            <%= for hour <- @hours do %>
+              <div class="flex border-b border-primary/10 h-16">
+                <!-- Hour Label -->
+                <div class="w-16 flex-shrink-0 p-1 text-xs text-base-content/60 text-right pr-2 bg-base-200">
+                  <%= format_hour(hour) %>
+                </div>
+                <!-- Day Columns -->
+                <div class="flex-1 grid grid-cols-7">
+                  <%= for day <- @week_days do %>
+                    <div
+                      class={"border-r border-primary/10 last:border-r-0 relative hover:bg-primary/5 cursor-pointer #{if day == @today, do: "bg-primary/5"}" }
+                      id={"slot-#{day}-#{hour}"}
+                      phx-hook="Sortable"
+                      data-group="schedule"
+                      data-date={Date.to_iso8601(day)}
+                      data-hour={hour}
+                    >
+                      <!-- Scheduled tasks for this slot -->
+                      <%= for task <- tasks_at_slot(@weekly_tasks, day, hour) do %>
+                        <div
+                          class="absolute inset-x-0.5 top-0.5 bg-primary/20 border border-primary/40 rounded p-1 text-xs cursor-move hover:bg-primary/30 z-10"
+                          id={"scheduled-task-#{task.id}"}
+                          data-id={task.id}
+                          data-task-id={task.id}
+                          style={"height: #{task_height(task)}px;"}
+                        >
+                          <div class="truncate font-medium"><%= task.title %></div>
+                          <%= if task.event do %>
+                            <div class="text-base-content/60"><%= format_time(task.event.start_at) %></div>
+                          <% end %>
+                        </div>
+                      <% end %>
+                    </div>
+                  <% end %>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  # Calendar View Component
+  defp calendar_view(assigns) do
+    {year, month} = assigns.current_month
+    first_day = Date.new!(year, month, 1)
+    last_day = Date.end_of_month(first_day)
+    first_weekday = Date.day_of_week(first_day)
+    today = Date.utc_today()
+
+    # Build calendar grid
+    days_before = for d <- (first_weekday - 1)..1, d > 0, do: Date.add(first_day, -d)
+    days_in_month = for d <- 0..(last_day.day - 1), do: Date.add(first_day, d)
+    days_after_count = 7 - rem(length(days_before) + length(days_in_month), 7)
+    days_after_count = if days_after_count == 7, do: 0, else: days_after_count
+    days_after = for d <- 1..days_after_count, do: Date.add(last_day, d)
+    all_days = days_before ++ days_in_month ++ days_after
+
+    assigns =
+      assigns
+      |> assign(:year, year)
+      |> assign(:month, month)
+      |> assign(:first_day, first_day)
+      |> assign(:all_days, all_days)
+      |> assign(:today, today)
+
+    ~H"""
+    <div class="flex-1 flex bg-base-300 overflow-hidden">
+      <!-- Calendar Grid -->
+      <div class="flex-1 flex flex-col overflow-hidden">
+        <!-- Month Navigation -->
+        <div class="p-3 border-b border-primary/20 bg-base-200 flex items-center justify-between">
+          <button phx-click="prev_month" class="btn btn-imperial btn-sm">
+            <.icon name="hero-chevron-left" class="w-4 h-4" />
+          </button>
+          <span class="font-semibold text-primary text-lg">
+            <%= Calendar.strftime(@first_day, "%B %Y") %>
+          </span>
+          <button phx-click="next_month" class="btn btn-imperial btn-sm">
+            <.icon name="hero-chevron-right" class="w-4 h-4" />
+          </button>
+        </div>
+
+        <!-- Day Headers -->
+        <div class="grid grid-cols-7 border-b border-primary/20 bg-base-100">
+          <%= for day_name <- ~w(Mon Tue Wed Thu Fri Sat Sun) do %>
+            <div class="p-2 text-center text-sm font-semibold text-primary border-r border-primary/10 last:border-r-0">
+              <%= day_name %>
+            </div>
+          <% end %>
+        </div>
+
+        <!-- Calendar Grid -->
+        <div class="flex-1 overflow-y-auto">
+          <div class="grid grid-cols-7 h-full">
+            <%= for day <- @all_days do %>
+              <% is_current_month = day.month == @month %>
+              <% is_today = day == @today %>
+              <% is_selected = day == @selected_day %>
+              <% day_tasks = tasks_on_day(@monthly_tasks, day) %>
+              <div
+                class={"border-r border-b border-primary/10 p-1 min-h-24 cursor-pointer hover:bg-primary/5 #{unless is_current_month, do: "bg-base-300/50"} #{if is_selected, do: "ring-2 ring-primary ring-inset"}"}
+                phx-click="select_day"
+                phx-value-date={Date.to_iso8601(day)}
+              >
+                <div class={"text-sm mb-1 #{if is_today, do: "font-bold text-primary"} #{unless is_current_month, do: "text-base-content/40"}"}>
+                  <%= day.day %>
+                </div>
+                <div class="space-y-0.5">
+                  <%= for task <- Enum.take(day_tasks, 3) do %>
+                    <div class="text-xs bg-primary/20 rounded px-1 py-0.5 truncate border-l-2 border-primary">
+                      <%= task.title %>
+                    </div>
+                  <% end %>
+                  <%= if length(day_tasks) > 3 do %>
+                    <div class="text-xs text-base-content/60">+<%= length(day_tasks) - 3 %> more</div>
+                  <% end %>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+
+      <!-- Day Detail Sidebar -->
+      <div class="w-80 bg-base-200 border-l border-primary/20 flex flex-col">
+        <div class="p-3 border-b border-primary/20 bg-base-100">
+          <h3 class="font-semibold text-primary tracking-wide">
+            <%= Calendar.strftime(@selected_day, "%A, %B %d") %>
+          </h3>
+        </div>
+
+        <!-- Scheduled Tasks for Selected Day -->
+        <div class="flex-1 overflow-y-auto p-2">
+          <h4 class="stat-block-label text-xs mb-2">Scheduled</h4>
+          <div class="space-y-2 mb-4">
+            <% day_tasks = tasks_on_day(@monthly_tasks, @selected_day) %>
+            <%= for task <- day_tasks do %>
+              <div class="bg-base-100 border border-primary/10 rounded p-2 text-sm">
+                <div class="flex items-center gap-2">
+                  <span class={"font-bold text-xs #{priority_color(task.priority)}"}>
+                    <%= priority_label(task.priority) %>
+                  </span>
+                  <span class="truncate flex-1"><%= task.title %></span>
+                  <button
+                    phx-click="unschedule_task"
+                    phx-value-task_id={task.id}
+                    class="btn btn-ghost btn-xs text-error"
+                    title="Unschedule"
+                  >
+                    <.icon name="hero-x-mark" class="w-3 h-3" />
+                  </button>
+                </div>
+                <%= if task.event do %>
+                  <div class="text-xs text-base-content/60 mt-1">
+                    <.icon name="hero-clock" class="w-3 h-3 inline" />
+                    <%= format_time(task.event.start_at) %> - <%= format_time(task.event.end_at) %>
+                  </div>
+                <% end %>
+              </div>
+            <% end %>
+            <%= if Enum.empty?(day_tasks) do %>
+              <p class="text-sm text-base-content/60 italic">No scheduled tasks</p>
+            <% end %>
+          </div>
+
+          <!-- Quick Schedule -->
+          <h4 class="stat-block-label text-xs mb-2 mt-4">Quick Schedule</h4>
+          <div class="space-y-1">
+            <%= for task <- Enum.take(@unscheduled_tasks, 5) do %>
+              <div class="flex items-center gap-2 p-1 hover:bg-base-100 rounded">
+                <button
+                  phx-click="schedule_task"
+                  phx-value-task_id={task.id}
+                  phx-value-date={Date.to_iso8601(@selected_day)}
+                  phx-value-hour="9"
+                  class="btn btn-ghost btn-xs text-primary"
+                  title="Schedule for 9 AM"
+                >
+                  <.icon name="hero-plus" class="w-3 h-3" />
+                </button>
+                <span class="text-sm truncate flex-1"><%= task.title %></span>
+              </div>
+            <% end %>
+            <%= if length(@unscheduled_tasks) > 5 do %>
+              <p class="text-xs text-base-content/60 mt-2">+<%= length(@unscheduled_tasks) - 5 %> more unscheduled</p>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  # Helper functions for views
+  defp format_hour(hour) when hour < 12, do: "#{hour} AM"
+  defp format_hour(12), do: "12 PM"
+  defp format_hour(hour), do: "#{hour - 12} PM"
+
+  defp format_time(nil), do: ""
+  defp format_time(%DateTime{} = dt) do
+    Calendar.strftime(dt, "%-I:%M %p")
+  end
+
+  defp tasks_at_slot(tasks, date, hour) do
+    Enum.filter(tasks, fn task ->
+      task.event &&
+        DateTime.to_date(task.event.start_at) == date &&
+        task.event.start_at.hour == hour
+    end)
+  end
+
+  defp tasks_on_day(tasks, date) do
+    Enum.filter(tasks, fn task ->
+      task.event && DateTime.to_date(task.event.start_at) == date
+    end)
+  end
+
+  defp task_height(task) do
+    if task.event && task.event.end_at do
+      duration_seconds = DateTime.diff(task.event.end_at, task.event.start_at)
+      duration_hours = duration_seconds / 3600
+      # 64px per hour (h-16 = 4rem = 64px)
+      max(24, round(duration_hours * 64))
+    else
+      64
+    end
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
@@ -447,6 +905,34 @@ defmodule AuroraWeb.BoardLive.Show do
             </div>
           </div>
           <div class="flex items-center gap-2">
+            <!-- View Mode Toggle -->
+            <div class="btn-group">
+              <button
+                phx-click="set_view_mode"
+                phx-value-mode="kanban"
+                class={"btn btn-sm #{if @view_mode == :kanban, do: "btn-imperial-primary", else: "btn-imperial"}"}
+              >
+                <.icon name="hero-view-columns" class="w-4 h-4" />
+                Kanban
+              </button>
+              <button
+                phx-click="set_view_mode"
+                phx-value-mode="weekly"
+                class={"btn btn-sm #{if @view_mode == :weekly, do: "btn-imperial-primary", else: "btn-imperial"}"}
+              >
+                <.icon name="hero-calendar-days" class="w-4 h-4" />
+                Weekly
+              </button>
+              <button
+                phx-click="set_view_mode"
+                phx-value-mode="calendar"
+                class={"btn btn-sm #{if @view_mode == :calendar, do: "btn-imperial-primary", else: "btn-imperial"}"}
+              >
+                <.icon name="hero-calendar" class="w-4 h-4" />
+                Calendar
+              </button>
+            </div>
+
             <!-- Labels Management -->
             <div class="dropdown dropdown-end">
               <label tabindex="0" phx-click="toggle_labels_menu" class="btn btn-imperial btn-sm">
@@ -592,14 +1078,17 @@ defmodule AuroraWeb.BoardLive.Show do
         <% end %>
       </div>
 
-      <!-- Kanban Board -->
-      <div class="flex-1 overflow-x-auto p-4 bg-base-300">
-        <div
-          class="flex gap-4 h-full"
-          id="columns-container"
-          phx-hook="Sortable"
-          data-group="columns"
-        >
+      <!-- Main Content Area -->
+      <%= case @view_mode do %>
+        <% :kanban -> %>
+          <!-- Kanban Board -->
+          <div class="flex-1 overflow-x-auto p-4 bg-base-300">
+            <div
+              class="flex gap-4 h-full"
+              id="columns-container"
+              phx-hook="Sortable"
+              data-group="columns"
+            >
           <!-- Columns -->
           <%= for column <- @columns do %>
             <div
@@ -746,15 +1235,33 @@ defmodule AuroraWeb.BoardLive.Show do
             </div>
           <% end %>
 
-          <!-- Add Column Button -->
-          <div class="flex-shrink-0 w-80">
-            <button phx-click="add_column" class="btn btn-imperial w-full justify-start">
-              <.icon name="hero-plus" class="w-4 h-4" />
-              Add Division
-            </button>
+              <!-- Add Column Button -->
+              <div class="flex-shrink-0 w-80">
+                <button phx-click="add_column" class="btn btn-imperial w-full justify-start">
+                  <.icon name="hero-plus" class="w-4 h-4" />
+                  Add Division
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
+
+        <% :weekly -> %>
+          <!-- Weekly View -->
+          <.weekly_view
+            current_week_start={@current_week_start}
+            unscheduled_tasks={@unscheduled_tasks}
+            weekly_tasks={@weekly_tasks}
+          />
+
+        <% :calendar -> %>
+          <!-- Calendar View -->
+          <.calendar_view
+            current_month={@current_month}
+            selected_day={@selected_day}
+            monthly_tasks={@monthly_tasks}
+            unscheduled_tasks={@unscheduled_tasks}
+          />
+      <% end %>
 
       <!-- Task Detail Modal -->
       <%= if @selected_task do %>
@@ -795,12 +1302,16 @@ defmodule AuroraWeb.BoardLive.Show do
                 <label class="label"><span class="stat-block-label">Priority Level</span></label>
                 <div class="flex gap-2">
                   <%= for p <- 1..4 do %>
-                    <label class={"btn btn-sm #{if @selected_task.priority == p, do: "btn-imperial-primary", else: "btn-imperial"}"}>
+                    <label
+                      class={"btn btn-sm cursor-pointer #{if @modal_priority == p, do: "btn-imperial-primary", else: "btn-imperial"}"}
+                      phx-click="set_modal_priority"
+                      phx-value-priority={p}
+                    >
                       <input
                         type="radio"
                         name="priority"
                         value={p}
-                        checked={@selected_task.priority == p}
+                        checked={@modal_priority == p}
                         class="hidden"
                       />
                       <span class={priority_color(p)}><%= priority_label(p) %></span>
@@ -818,6 +1329,54 @@ defmodule AuroraWeb.BoardLive.Show do
                   value={@selected_task.due_date}
                   class="input input-imperial w-full max-w-xs"
                 />
+              </div>
+
+              <!-- Scheduling -->
+              <div class="form-control">
+                <label class="label"><span class="stat-block-label">Schedule</span></label>
+                <div class="flex flex-wrap gap-3">
+                  <div>
+                    <label class="text-xs text-base-content/60 block mb-1">Date</label>
+                    <input
+                      type="date"
+                      name="schedule_date"
+                      value={if @selected_task.event, do: DateTime.to_date(@selected_task.event.start_at)}
+                      class="input input-imperial input-sm"
+                    />
+                  </div>
+                  <div>
+                    <label class="text-xs text-base-content/60 block mb-1">Start Time</label>
+                    <input
+                      type="time"
+                      name="schedule_start_time"
+                      value={if @selected_task.event, do: Calendar.strftime(@selected_task.event.start_at, "%H:%M")}
+                      class="input input-imperial input-sm"
+                    />
+                  </div>
+                  <div>
+                    <label class="text-xs text-base-content/60 block mb-1">End Time</label>
+                    <input
+                      type="time"
+                      name="schedule_end_time"
+                      value={if @selected_task.event && @selected_task.event.end_at, do: Calendar.strftime(@selected_task.event.end_at, "%H:%M")}
+                      class="input input-imperial input-sm"
+                    />
+                  </div>
+                  <%= if @selected_task.event do %>
+                    <div class="flex items-end">
+                      <button
+                        type="button"
+                        phx-click="unschedule_task"
+                        phx-value-task_id={@selected_task.id}
+                        class="btn btn-imperial-danger btn-sm"
+                      >
+                        <.icon name="hero-x-mark" class="w-3 h-3" />
+                        Clear
+                      </button>
+                    </div>
+                  <% end %>
+                </div>
+                <p class="text-xs text-base-content/50 mt-1">Set date and time to schedule this directive on the calendar</p>
               </div>
 
               <!-- Labels -->

@@ -2,6 +2,8 @@ defmodule Aurora.Boards.Task do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias Aurora.Calendar.Event
+
   schema "tasks" do
     field :title, :string
     field :description, :string
@@ -10,6 +12,7 @@ defmodule Aurora.Boards.Task do
     field :due_date, :date
 
     belongs_to :column, Aurora.Boards.Column
+    belongs_to :event, Event
     many_to_many :labels, Aurora.Boards.Label, join_through: "task_labels", on_replace: :delete
 
     timestamps()
@@ -17,10 +20,11 @@ defmodule Aurora.Boards.Task do
 
   def changeset(task, attrs) do
     task
-    |> cast(attrs, [:title, :description, :position, :priority, :due_date, :column_id])
+    |> cast(attrs, [:title, :description, :position, :priority, :due_date, :column_id, :event_id])
     |> validate_required([:title, :column_id])
     |> validate_length(:title, min: 1, max: 255)
     |> validate_inclusion(:priority, 1..4)
     |> foreign_key_constraint(:column_id)
+    |> foreign_key_constraint(:event_id)
   end
 end

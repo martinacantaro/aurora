@@ -87,6 +87,23 @@ const Hooks = {
                 position: newPosition
               })
             }
+          } else if (group === "schedule") {
+            const taskId = evt.item.dataset.taskId
+            const toDate = evt.to.dataset.date
+            const toHour = evt.to.dataset.hour
+            const isUnscheduledContainer = evt.to.id === "unscheduled-tasks"
+
+            if (isUnscheduledContainer) {
+              // Dropped on unscheduled sidebar - unschedule the task
+              this.pushEvent("unschedule_task", { task_id: taskId })
+            } else if (toDate && toHour) {
+              // Dropped on a time slot - schedule the task
+              this.pushEvent("schedule_task", {
+                task_id: taskId,
+                date: toDate,
+                hour: toHour
+              })
+            }
           }
         }
       })
