@@ -26,8 +26,28 @@ import {hooks as colocatedHooks} from "phoenix-colocated/aurora"
 import topbar from "../vendor/topbar"
 import Sortable from "sortablejs"
 
-// Sortable hook for drag-and-drop
+// Custom hooks
 const Hooks = {
+  // Scroll to bottom hook for chat messages
+  ScrollToBottom: {
+    mounted() {
+      this.scrollToBottom()
+      this.observer = new MutationObserver(() => this.scrollToBottom())
+      this.observer.observe(this.el, { childList: true, subtree: true })
+    },
+    updated() {
+      this.scrollToBottom()
+    },
+    destroyed() {
+      if (this.observer) {
+        this.observer.disconnect()
+      }
+    },
+    scrollToBottom() {
+      this.el.scrollTop = this.el.scrollHeight
+    }
+  },
+  // Sortable hook for drag-and-drop
   Sortable: {
     mounted() {
       const group = this.el.dataset.group

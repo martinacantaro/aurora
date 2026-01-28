@@ -417,9 +417,17 @@ defmodule AuroraWeb.DashboardLive.Index do
           <.icon name="hero-book-open" class="hud-nav-icon" />
           <span class="hud-nav-label">Chronicle</span>
         </.link>
+        <.link navigate={~p"/calendar"} class="hud-nav-item">
+          <.icon name="hero-calendar-days" class="hud-nav-icon" />
+          <span class="hud-nav-label">Calendar</span>
+        </.link>
         <.link navigate={~p"/finance"} class="hud-nav-item">
           <.icon name="hero-banknotes" class="hud-nav-icon" />
           <span class="hud-nav-label">Treasury</span>
+        </.link>
+        <.link navigate={~p"/assistant"} class="hud-nav-item">
+          <.icon name="hero-sparkles" class="hud-nav-icon" />
+          <span class="hud-nav-label">Aurora AI</span>
         </.link>
       </nav>
 
