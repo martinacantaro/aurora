@@ -7,8 +7,67 @@ defmodule Aurora.Assistant.ClaudeClient do
 
   @api_url "https://api.anthropic.com/v1/messages"
   @default_model "claude-sonnet-4-20250514"
+  @fast_model "claude-haiku-4-20250514"
   @default_max_tokens 4096
   @anthropic_version "2023-06-01"
+
+  @doc """
+  Analyzes a user message to determine if it requires tools/actions.
+  Uses a fast model (Haiku) to minimize latency and cost.
+  Returns {:ok, :needs_tools} or {:ok, :conversation_only}
+  """
+  def analyze_intent(user_message) do
+    system_prompt = """
+    You are an intent classifier. Analyze the user's message and determine if they are:
+    1. Requesting an ACTION (create, update, delete, view specific data, track something, log something)
+    2. Just having a CONVERSATION (greeting, question about you, general chat, testing, unclear intent)
+
+    Respond with ONLY one word: "ACTION" or "CONVERSATION"
+
+    Examples:
+    - "hello" -> CONVERSATION
+    - "testing" -> CONVERSATION
+    - "what can you do?" -> CONVERSATION
+    - "how are you?" -> CONVERSATION
+    - "create a task" -> ACTION
+    - "show my habits" -> ACTION
+    - "what are my goals?" -> ACTION
+    - "log an expense of $50" -> ACTION
+    - "mark habit as done" -> ACTION
+    - "hi, add a task for groceries" -> ACTION
+    """
+
+    messages = [%{"role" => "user", "content" => user_message}]
+
+    body = %{
+      model: @fast_model,
+      max_tokens: 10,
+      messages: messages,
+      system: system_prompt
+    }
+
+    case Req.post(@api_url, json: body, headers: build_headers(), receive_timeout: 30_000) do
+      {:ok, %{status: 200, body: response}} ->
+        text = get_response_text(response)
+        if String.contains?(String.upcase(text), "ACTION") do
+          {:ok, :needs_tools}
+        else
+          {:ok, :conversation_only}
+        end
+
+      {:ok, %{status: status, body: body}} ->
+        Logger.warning("Intent analysis failed: #{status}")
+        # Default to needing tools if analysis fails
+        {:ok, :needs_tools}
+
+      {:error, error} ->
+        Logger.warning("Intent analysis error: #{inspect(error)}")
+        {:ok, :needs_tools}
+    end
+  end
+
+  defp get_response_text(%{"content" => [%{"type" => "text", "text" => text} | _]}), do: text
+  defp get_response_text(_), do: ""
 
   @doc """
   Sends a message to Claude API and returns the response.

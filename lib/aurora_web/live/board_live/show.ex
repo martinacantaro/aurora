@@ -195,6 +195,16 @@ defmodule AuroraWeb.BoardLive.Show do
     end
   end
 
+  def handle_event("toggle_task_completed", %{"id" => id}, socket) do
+    case Boards.toggle_task_completed(String.to_integer(id)) do
+      {:ok, _task} ->
+        {:noreply, reload_board(socket)}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Failed to update task")}
+    end
+  end
+
   # Drag and drop
   def handle_event("reorder_columns", %{"ids" => column_ids}, socket) do
     board = socket.assigns.board
@@ -372,7 +382,7 @@ defmodule AuroraWeb.BoardLive.Show do
   end
 
   # Filter events
-  def handle_event("search", %{"query" => query}, socket) do
+  def handle_event("search", %{"value" => query}, socket) do
     {:noreply, assign(socket, :search_query, query)}
   end
 
@@ -934,13 +944,13 @@ defmodule AuroraWeb.BoardLive.Show do
             </div>
 
             <!-- Labels Management -->
-            <div class="dropdown dropdown-end">
-              <label tabindex="0" phx-click="toggle_labels_menu" class="btn btn-imperial btn-sm">
+            <div class="relative">
+              <button type="button" phx-click="toggle_labels_menu" class="btn btn-imperial btn-sm">
                 <.icon name="hero-tag" class="w-4 h-4" />
                 Insignias
-              </label>
+              </button>
               <%= if @show_labels_menu do %>
-                <div tabindex="0" class="dropdown-content z-50 p-4 shadow-lg bg-base-200 border border-primary/30 rounded w-72">
+                <div class="absolute top-full right-0 mt-1 z-50 p-4 shadow-lg bg-base-200 border border-primary/30 rounded w-72">
                   <h3 class="stat-block-label mb-3">Manage Insignias</h3>
 
                   <!-- Existing Labels -->
@@ -951,7 +961,7 @@ defmodule AuroraWeb.BoardLive.Show do
                           <span class="w-4 h-4 rounded" style={"background-color: #{label.color}"}></span>
                           <span class="text-sm"><%= label.name %></span>
                         </div>
-                        <button phx-click="delete_label" phx-value-id={label.id} class="btn btn-ghost btn-xs text-error">
+                        <button type="button" phx-click="delete_label" phx-value-id={label.id} class="btn btn-ghost btn-xs text-error">
                           <.icon name="hero-x-mark" class="w-3 h-3" />
                         </button>
                       </div>
@@ -997,29 +1007,31 @@ defmodule AuroraWeb.BoardLive.Show do
         </div>
 
         <!-- Label Filter -->
-        <div class="dropdown">
-          <label tabindex="0" phx-click="toggle_filter_labels" class={"btn btn-sm #{if @filter_labels != [], do: "btn-imperial-primary", else: "btn-imperial"}"}>
+        <div class="relative">
+          <button type="button" phx-click="toggle_filter_labels" class={"btn btn-sm #{if @filter_labels != [], do: "btn-imperial-primary", else: "btn-imperial"}"}>
             <.icon name="hero-tag" class="w-4 h-4" />
             Insignias
             <%= if @filter_labels != [] do %>
               <span class="badge-imperial text-xs"><%= length(@filter_labels) %></span>
             <% end %>
-          </label>
+          </button>
           <%= if @show_filter_labels do %>
-            <div tabindex="0" class="dropdown-content z-50 p-3 shadow-lg bg-base-200 border border-primary/30 rounded w-56">
+            <div class="absolute top-full left-0 mt-1 z-50 p-3 shadow-lg bg-base-200 border border-primary/30 rounded w-56">
               <div class="space-y-2">
                 <%= for label <- @labels do %>
-                  <label class="flex items-center gap-2 cursor-pointer hover:bg-base-100 p-1 rounded">
+                  <div
+                    class="flex items-center gap-2 cursor-pointer hover:bg-base-100 p-1 rounded"
+                    phx-click="toggle_label_filter"
+                    phx-value-id={label.id}
+                  >
                     <input
                       type="checkbox"
                       checked={label.id in @filter_labels}
-                      phx-click="toggle_label_filter"
-                      phx-value-id={label.id}
-                      class="checkbox checkbox-sm checkbox-primary"
+                      class="checkbox checkbox-sm checkbox-primary pointer-events-none"
                     />
                     <span class="w-3 h-3 rounded" style={"background-color: #{label.color}"}></span>
                     <span class="text-sm"><%= label.name %></span>
-                  </label>
+                  </div>
                 <% end %>
                 <%= if Enum.empty?(@labels) do %>
                   <p class="text-sm text-base-content/60 italic">No insignias</p>
@@ -1030,16 +1042,16 @@ defmodule AuroraWeb.BoardLive.Show do
         </div>
 
         <!-- Priority Filter -->
-        <div class="dropdown">
-          <label tabindex="0" phx-click="toggle_filter_priority" class={"btn btn-sm #{if @filter_priority, do: "btn-imperial-primary", else: "btn-imperial"}"}>
+        <div class="relative">
+          <button type="button" phx-click="toggle_filter_priority" class={"btn btn-sm #{if @filter_priority, do: "btn-imperial-primary", else: "btn-imperial"}"}>
             <.icon name="hero-flag" class="w-4 h-4" />
             Priority
             <%= if @filter_priority do %>
               <span class="badge-imperial text-xs"><%= priority_label(@filter_priority) %></span>
             <% end %>
-          </label>
+          </button>
           <%= if @show_filter_priority do %>
-            <ul tabindex="0" class="dropdown-content z-50 menu p-2 shadow-lg bg-base-200 border border-primary/30 rounded w-40">
+            <ul class="absolute top-full left-0 mt-1 z-50 menu p-2 shadow-lg bg-base-200 border border-primary/30 rounded w-40">
               <li><a phx-click="set_priority_filter" phx-value-priority="" class={if @filter_priority == nil, do: "text-primary"}>All</a></li>
               <li><a phx-click="set_priority_filter" phx-value-priority="1" class={"text-error #{if @filter_priority == 1, do: "font-bold"}"}>P1 - Critical</a></li>
               <li><a phx-click="set_priority_filter" phx-value-priority="2" class={"text-warning #{if @filter_priority == 2, do: "font-bold"}"}>P2 - High</a></li>
@@ -1050,16 +1062,16 @@ defmodule AuroraWeb.BoardLive.Show do
         </div>
 
         <!-- Due Date Filter -->
-        <div class="dropdown">
-          <label tabindex="0" phx-click="toggle_filter_due" class={"btn btn-sm #{if @filter_due_date, do: "btn-imperial-primary", else: "btn-imperial"}"}>
+        <div class="relative">
+          <button type="button" phx-click="toggle_filter_due" class={"btn btn-sm #{if @filter_due_date, do: "btn-imperial-primary", else: "btn-imperial"}"}>
             <.icon name="hero-calendar" class="w-4 h-4" />
             Deadline
             <%= if @filter_due_date do %>
               <span class="badge-imperial text-xs"><%= @filter_due_date %></span>
             <% end %>
-          </label>
+          </button>
           <%= if @show_filter_due do %>
-            <ul tabindex="0" class="dropdown-content z-50 menu p-2 shadow-lg bg-base-200 border border-primary/30 rounded w-40">
+            <ul class="absolute top-full left-0 mt-1 z-50 menu p-2 shadow-lg bg-base-200 border border-primary/30 rounded w-40">
               <li><a phx-click="set_due_date_filter" phx-value-due="" class={if @filter_due_date == nil, do: "text-primary"}>All</a></li>
               <li><a phx-click="set_due_date_filter" phx-value-due="overdue" class={"text-error #{if @filter_due_date == "overdue", do: "font-bold"}"}>Overdue</a></li>
               <li><a phx-click="set_due_date_filter" phx-value-due="today" class={"text-warning #{if @filter_due_date == "today", do: "font-bold"}"}>Today</a></li>
@@ -1154,19 +1166,30 @@ defmodule AuroraWeb.BoardLive.Show do
               >
                 <%= for task <- filtered_tasks do %>
                   <div
-                    class="bg-base-100 border border-primary/10 rounded p-3 cursor-move hover:border-primary/40 transition-colors group"
+                    class={"bg-base-100 border border-primary/10 rounded p-3 cursor-move hover:border-primary/40 transition-colors group #{if task.completed, do: "opacity-60"}"}
                     id={"task-#{task.id}"}
                     data-id={task.id}
                   >
                     <!-- Task Header -->
                     <div class="flex items-start gap-2">
+                      <!-- Completion checkbox -->
+                      <button
+                        type="button"
+                        phx-click="toggle_task_completed"
+                        phx-value-id={task.id}
+                        class={"w-5 h-5 rounded border flex-shrink-0 flex items-center justify-center cursor-pointer transition-colors #{if task.completed, do: "bg-success border-success text-success-content", else: "border-primary/40 hover:border-primary"}"}
+                      >
+                        <%= if task.completed do %>
+                          <.icon name="hero-check" class="w-3 h-3" />
+                        <% end %>
+                      </button>
                       <!-- Priority indicator -->
                       <span class={"font-bold text-xs #{priority_color(task.priority)}"}>
                         <%= priority_label(task.priority) %>
                       </span>
                       <!-- Title - clickable to open modal -->
                       <p
-                        class="text-sm flex-1 cursor-pointer hover:text-primary"
+                        class={"text-sm flex-1 cursor-pointer hover:text-primary #{if task.completed, do: "line-through text-base-content/50"}"}
                         phx-click="open_task"
                         phx-value-id={task.id}
                       >

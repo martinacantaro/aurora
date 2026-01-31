@@ -43,6 +43,34 @@ defmodule AuroraWeb.DashboardLive.Index do
      |> assign(:total_habits, total_habits)}
   end
 
+  @impl true
+  def handle_event("toggle_habit", %{"id" => id}, socket) do
+    habit_id = String.to_integer(id)
+
+    case Habits.toggle_habit_today(habit_id) do
+      {:ok, _completed} ->
+        {:noreply, reload_habits(socket)}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Failed to toggle ritual")}
+    end
+  end
+
+  defp reload_habits(socket) do
+    habits_with_status = Habits.list_habits_with_today_status()
+    total_habits = length(habits_with_status)
+    completed_habits = Enum.count(habits_with_status, & &1.completed_today)
+    discipline_pct = if total_habits > 0, do: round(completed_habits / total_habits * 100), else: 0
+    best_streak = habits_with_status |> Enum.map(& &1.streak) |> Enum.max(fn -> 0 end)
+
+    socket
+    |> assign(:habits, habits_with_status)
+    |> assign(:completed_habits, completed_habits)
+    |> assign(:total_habits, total_habits)
+    |> assign(:discipline_pct, discipline_pct)
+    |> assign(:best_streak, best_streak)
+  end
+
   defp mood_to_vitality(nil), do: 50
   defp mood_to_vitality(mood), do: mood * 20
 
@@ -234,11 +262,16 @@ defmodule AuroraWeb.DashboardLive.Index do
                 <div class="space-y-2">
                   <%= for %{habit: habit, completed_today: completed?, streak: streak} <- Enum.take(@habits, 6) do %>
                     <div class={"quest-item #{if completed?, do: "quest-item-complete"}"}>
-                      <div class={"ritual-check #{if completed?, do: "ritual-check-complete"}"}>
+                      <button
+                        type="button"
+                        phx-click="toggle_habit"
+                        phx-value-id={habit.id}
+                        class={"ritual-check cursor-pointer hover:border-primary #{if completed?, do: "ritual-check-complete"}"}
+                      >
                         <%= if completed? do %>
                           <.icon name="hero-check" class="w-3 h-3" />
                         <% end %>
-                      </div>
+                      </button>
                       <div class="flex-1 flex justify-between items-center">
                         <span class={if completed?, do: "line-through text-base-content/50", else: ""}>
                           <%= habit.name %>

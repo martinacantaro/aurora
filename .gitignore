@@ -42,3 +42,8 @@ npm-debug.log
 .env
 .env.local
 
+# Private voice notes (transcriptions)
+/priv/notes/*.txt
+/priv/notes/*.md
+!/priv/notes/README.md
+

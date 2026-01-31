@@ -129,6 +129,17 @@ defmodule Aurora.Boards do
     Task.changeset(task, attrs)
   end
 
+  @doc """
+  Toggle the completed status of a task.
+  """
+  def toggle_task_completed(task_id) do
+    task = get_task!(task_id)
+    new_completed = !task.completed
+    completed_at = if new_completed, do: DateTime.utc_now() |> DateTime.truncate(:second), else: nil
+
+    update_task(task, %{completed: new_completed, completed_at: completed_at})
+  end
+
   def move_task(task_id, new_column_id, new_position) do
     Repo.transaction(fn ->
       task = get_task!(task_id)

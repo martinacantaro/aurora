@@ -28,6 +28,92 @@ import Sortable from "sortablejs"
 
 // Custom hooks
 const Hooks = {
+  // Voice input hook using Web Speech API
+  VoiceInput: {
+    mounted() {
+      // Check for browser support
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+      if (!SpeechRecognition) {
+        console.warn("Speech recognition not supported in this browser")
+        this.el.style.display = "none"
+        return
+      }
+
+      this.recognition = new SpeechRecognition()
+      this.recognition.continuous = false
+      this.recognition.interimResults = true
+      this.recognition.lang = "en-US"
+      this.isListening = false
+
+      // Find the input field
+      this.inputField = document.querySelector('input[name="message"]')
+
+      this.recognition.onstart = () => {
+        this.isListening = true
+        this.el.classList.add("btn-error", "animate-pulse")
+        this.el.classList.remove("btn-imperial")
+        this.pushEvent("voice_recording_started", {})
+      }
+
+      this.recognition.onend = () => {
+        this.isListening = false
+        this.el.classList.remove("btn-error", "animate-pulse")
+        this.el.classList.add("btn-imperial")
+        this.pushEvent("voice_recording_stopped", {})
+      }
+
+      this.recognition.onresult = (event) => {
+        let finalTranscript = ""
+        let interimTranscript = ""
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript
+          } else {
+            interimTranscript += transcript
+          }
+        }
+
+        // Update input field with interim results for visual feedback
+        if (this.inputField) {
+          this.inputField.value = finalTranscript || interimTranscript
+        }
+
+        // When we have a final result, send it
+        if (finalTranscript) {
+          this.pushEvent("voice_input", { text: finalTranscript.trim() })
+        }
+      }
+
+      this.recognition.onerror = (event) => {
+        console.error("Speech recognition error:", event.error)
+        this.isListening = false
+        this.el.classList.remove("btn-error", "animate-pulse")
+        this.el.classList.add("btn-imperial")
+
+        if (event.error === "not-allowed") {
+          alert("Microphone access denied. Please allow microphone access to use voice input.")
+        }
+      }
+
+      // Toggle recording on click
+      this.el.addEventListener("click", () => {
+        if (this.isListening) {
+          this.recognition.stop()
+        } else {
+          this.recognition.start()
+        }
+      })
+    },
+
+    destroyed() {
+      if (this.recognition && this.isListening) {
+        this.recognition.stop()
+      }
+    }
+  },
+
   // Scroll to bottom hook for chat messages
   ScrollToBottom: {
     mounted() {

@@ -10,6 +10,8 @@ defmodule Aurora.Boards.Task do
     field :position, :integer, default: 0
     field :priority, :integer, default: 4
     field :due_date, :date
+    field :completed, :boolean, default: false
+    field :completed_at, :utc_datetime
 
     belongs_to :column, Aurora.Boards.Column
     belongs_to :event, Event
@@ -20,7 +22,7 @@ defmodule Aurora.Boards.Task do
 
   def changeset(task, attrs) do
     task
-    |> cast(attrs, [:title, :description, :position, :priority, :due_date, :column_id, :event_id])
+    |> cast(attrs, [:title, :description, :position, :priority, :due_date, :column_id, :event_id, :completed, :completed_at])
     |> validate_required([:title, :column_id])
     |> validate_length(:title, min: 1, max: 255)
     |> validate_inclusion(:priority, 1..4)
